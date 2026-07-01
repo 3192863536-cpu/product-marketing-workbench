@@ -16,6 +16,7 @@ const historyStorageKey = "marketingWorkbenchHistory";
 const usersStorageKey = "marketingWorkbenchUsers";
 const sessionStorageKey = "marketingWorkbenchSession";
 const imageConfigStorageKey = "marketingWorkbenchImageConfig";
+const defaultImageApiUrl = "https://image-api.kaopuapi.xyz/v1/images/generations";
 const maxHistoryItems = 12;
 const searchResultLimit = 8;
 
@@ -851,7 +852,7 @@ function applyServerConfig(config = {}) {
     $("#apiTokenInput").value = "";
     $("#apiTokenInput").placeholder = state.serverConfig.tokenConfigured ? "已保存，留空不修改" : "sk-...";
   }
-  if ($("#imageApiUrlInput")) $("#imageApiUrlInput").value = state.serverConfig.imageUrl || normalizeImageUrl(state.serverConfig.url);
+  if ($("#imageApiUrlInput")) $("#imageApiUrlInput").value = state.serverConfig.imageUrl || defaultImageApiUrl;
   if ($("#imageModelInput")) $("#imageModelInput").value = state.serverConfig.imageModel || "gpt-image-2";
 }
 
@@ -901,7 +902,7 @@ async function clearApiConfig() {
   try {
     await apiJson("/api/config", {
       method: "POST",
-      body: { clear: true, url: "", token: "", model: "", imageUrl: "", imageModel: "gpt-image-2" }
+      body: { clear: true, url: "", token: "", model: "", imageUrl: defaultImageApiUrl, imageModel: "gpt-image-2" }
     });
   } catch {}
   localStorage.removeItem(imageConfigStorageKey);
@@ -909,7 +910,7 @@ async function clearApiConfig() {
   $("#apiUrlInput").value = "";
   $("#apiTokenInput").value = "";
   $("#modelInput").value = "";
-  $("#imageApiUrlInput").value = "";
+  $("#imageApiUrlInput").value = defaultImageApiUrl;
   $("#imageModelInput").value = "gpt-image-2";
   updateApiConfigState();
   showToast("API 配置已清除");
@@ -2035,7 +2036,7 @@ async function generateHighlightPhrases() {
 function getImageConfig() {
   const apiConfig = getApiConfig();
   return {
-    url: clean($("#imageApiUrlInput").value) || normalizeImageUrl(apiConfig.url),
+    url: clean($("#imageApiUrlInput").value) || state.serverConfig.imageUrl || defaultImageApiUrl || normalizeImageUrl(apiConfig.url),
     token: state.serverConfig.tokenConfigured ? "server-managed" : apiConfig.token,
     model: clean($("#imageModelInput").value) || "gpt-image-2",
     logo: clean($("#imageLogoInput").value),
@@ -2063,7 +2064,7 @@ function saveImageConfig(options = {}) {
 
 function loadImageConfig() {
   const apiConfig = getApiConfig();
-  $("#imageApiUrlInput").value = state.serverConfig.imageUrl || normalizeImageUrl(apiConfig.url);
+  $("#imageApiUrlInput").value = state.serverConfig.imageUrl || defaultImageApiUrl || normalizeImageUrl(apiConfig.url);
   $("#imageModelInput").value = state.serverConfig.imageModel || "gpt-image-2";
   try {
     const saved = JSON.parse(localStorage.getItem(imageConfigStorageKey) || "null");
@@ -2083,7 +2084,7 @@ function loadImageConfig() {
 function syncImageConfigFromApi() {
   const current = clean($("#imageApiUrlInput").value);
   if (!current) {
-    $("#imageApiUrlInput").value = normalizeImageUrl(getApiConfig().url);
+    $("#imageApiUrlInput").value = state.serverConfig.imageUrl || defaultImageApiUrl || normalizeImageUrl(getApiConfig().url);
   }
   const logoInput = $("#imageLogoInput");
   if (logoInput && !clean(logoInput.value)) {
@@ -2310,7 +2311,7 @@ function normalizeImageModelName(model = "") {
   return String(model || "").trim().toLowerCase();
 }
 
-function imageSizeToPixels(value, model = "") {
+function imageSizeToPixels(value, model = "", quality = "medium") {
   const modelName = normalizeImageModelName(model);
   if (modelName.includes("dall-e-3")) {
     return {
@@ -2323,13 +2324,15 @@ function imageSizeToPixels(value, model = "") {
   }
 
   if (modelName.includes("gpt-image-2")) {
-    return {
-      "1:1": "1024x1024",
-      "16:9": "2048x1152",
-      "9:16": "1152x2048",
-      "4:3": "1536x1024",
-      "3:4": "1024x1536"
-    }[value] || "1024x1024";
+    const base = {
+      "1:1": [1024, 1024],
+      "16:9": [1024, 576],
+      "9:16": [576, 1024],
+      "4:3": [1024, 768],
+      "3:4": [768, 1024]
+    }[value] || [1024, 1024];
+    const multiplier = { low: 1, medium: 2, high: 4 }[quality] || 2;
+    return `${base[0] * multiplier}x${base[1] * multiplier}`;
   }
 
   return {
@@ -2512,7 +2515,7 @@ function closeImageLightbox() {
 async function requestImageGeneration(prompt, config, signal) {
   const requestBody = {
     prompt,
-    size: imageSizeToPixels(config.size, config.model),
+    size: imageSizeToPixels(config.size, config.model, config.quality),
     n: imageCountForModel(config.count, config.model)
   };
   const quality = imageQualityForModel(config.quality, config.model);

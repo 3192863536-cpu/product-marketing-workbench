@@ -12,6 +12,7 @@ const host = process.env.HOST || "127.0.0.1";
 const searchTimeoutMs = 18000;
 const sessionCookieName = "pmw_session";
 const trendRadarApiUrl = process.env.TRENDRADAR_NEWSNOW_API_URL || "https://newsnow.busiyi.world/api/s";
+const defaultImageApiUrl = process.env.DEFAULT_IMAGE_API_URL || "https://image-api.kaopuapi.xyz/v1/images/generations";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -73,7 +74,7 @@ function emptyData() {
       url: "",
       token: "",
       model: "",
-      imageUrl: "",
+      imageUrl: defaultImageApiUrl,
       imageModel: "gpt-image-2",
       updatedAt: ""
     }
@@ -115,7 +116,7 @@ function configForClient(config = {}) {
   return {
     url: config.url || "",
     model: config.model || "",
-    imageUrl: config.imageUrl || "",
+    imageUrl: config.imageUrl || defaultImageApiUrl,
     imageModel: config.imageModel || "gpt-image-2",
     tokenConfigured: Boolean(config.token),
     ready: Boolean(config.url && config.token && config.model)
@@ -336,7 +337,7 @@ async function handleConfig(request, response) {
       url: clean(body.url || ""),
       model: clean(body.model || ""),
       token: shouldClear ? "" : clean(body.token || "") || current.token || "",
-      imageUrl: clean(body.imageUrl || ""),
+      imageUrl: clean(body.imageUrl || "") || defaultImageApiUrl,
       imageModel: clean(body.imageModel || "") || "gpt-image-2",
       updatedAt: new Date().toISOString()
     };
@@ -432,7 +433,7 @@ async function proxyImageGeneration(request, response) {
   const session = await requireUser(request, response);
   if (!session) return true;
   const config = session.data.config || {};
-  const imageUrl = config.imageUrl || normalizeImageUrl(config.url || "");
+  const imageUrl = config.imageUrl || defaultImageApiUrl || normalizeImageUrl(config.url || "");
   if (!imageUrl || !config.token) {
     sendJson(response, 400, { ok: false, error: "后台图片 API 配置未完成" });
     return true;
