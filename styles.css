@@ -366,13 +366,13 @@ svg {
   border-radius: 22px;
   padding: clamp(28px, 4vw, 58px);
   background:
-    linear-gradient(142deg, oklch(1 0 0 / 0.82), oklch(0.97 0.012 18 / 0.48) 52%, oklch(0.18 0.014 250 / 0.16)),
-    linear-gradient(67deg, transparent 0 42%, oklch(1 0 0 / 0.22) 42.08% 42.22%, transparent 42.32%);
+    linear-gradient(142deg, oklch(1 0 0 / 0.74), oklch(0.98 0.01 18 / 0.42) 52%, oklch(0.18 0.014 250 / 0.10)),
+    linear-gradient(67deg, transparent 0 42%, oklch(1 0 0 / 0.16) 42.08% 42.22%, transparent 42.32%);
   box-shadow:
     0 34px 100px oklch(0.08 0.012 245 / 0.28),
     inset 0 1px 0 oklch(1 0 0 / 0.62);
-  backdrop-filter: blur(20px) saturate(1.06);
-  -webkit-backdrop-filter: blur(20px) saturate(1.06);
+  backdrop-filter: blur(22px) saturate(0.96);
+  -webkit-backdrop-filter: blur(22px) saturate(0.96);
 }
 
 .auth-brand-panel::before {
@@ -380,10 +380,11 @@ svg {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, oklch(1 0 0 / 0.94) 0%, oklch(1 0 0 / 0.62) 42%, transparent 70%),
-    radial-gradient(circle at 78% 28%, oklch(0.72 0.2 8 / 0.24), transparent 18rem),
+    linear-gradient(90deg, oklch(1 0 0 / 0.9) 0%, oklch(1 0 0 / 0.66) 42%, oklch(1 0 0 / 0.18) 72%),
+    radial-gradient(circle at 78% 28%, oklch(0.72 0.2 8 / 0.14), transparent 18rem),
     url("assets/auth-face-bg.jpg") 72% 48% / cover no-repeat;
-  opacity: 0.76;
+  opacity: 0.48;
+  filter: saturate(0.64) contrast(0.92) brightness(1.08);
   mask-image: linear-gradient(90deg, transparent 0 28%, black 48% 100%);
   -webkit-mask-image: linear-gradient(90deg, transparent 0 28%, black 48% 100%);
   pointer-events: none;
@@ -395,10 +396,10 @@ svg {
   inset: auto -18% -22% 18%;
   height: 210px;
   background:
-    linear-gradient(90deg, transparent, oklch(0.71 0.18 8 / 0.26), transparent),
-    linear-gradient(0deg, oklch(1 0 0 / 0.22), transparent 72%);
+    linear-gradient(90deg, transparent, oklch(0.71 0.18 8 / 0.14), transparent),
+    linear-gradient(0deg, oklch(1 0 0 / 0.34), transparent 72%);
   filter: blur(10px);
-  opacity: 0.72;
+  opacity: 0.58;
   pointer-events: none;
 }
 
