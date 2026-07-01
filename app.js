@@ -2476,9 +2476,20 @@ async function requestImageGeneration(prompt, config, signal) {
     })
   });
 
-  const data = await response.json();
+  const text = await response.text();
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    const looksLikeHtml = /^\s*<!doctype html|^\s*<html[\s>]/i.test(text);
+    throw new Error(
+      looksLikeHtml
+        ? "图片接口返回了网页内容，不是 JSON。请检查后台图片 API 网址是否填成网站首页或错误路径。"
+        : `图片接口返回了无法解析的内容：${text.replace(/\s+/g, " ").slice(0, 120)}`
+    );
+  }
   if (!response.ok) {
-    const message = data.error?.message || data.error?.code || `HTTP ${response.status}`;
+    const message = data.error?.message || data.error?.code || data.error || `HTTP ${response.status}`;
     throw new Error(message);
   }
   return extractImageUrls(data);

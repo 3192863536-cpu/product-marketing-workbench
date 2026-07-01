@@ -417,11 +417,31 @@ async function proxyImageGeneration(request, response) {
     })
   });
   const text = await upstream.text();
+  const contentType = upstream.headers.get("content-type") || "";
+  let parsed = null;
+  try {
+    parsed = text ? JSON.parse(text) : {};
+  } catch {}
+  if (!parsed && !contentType.includes("application/json")) {
+    const looksLikeHtml = /^\s*<!doctype html|^\s*<html[\s>]/i.test(text);
+    sendJson(response, upstream.ok ? 502 : upstream.status, {
+      ok: false,
+      error: {
+        code: "IMAGE_UPSTREAM_NOT_JSON",
+        message: looksLikeHtml
+          ? "图片接口返回了网页内容，不是 JSON。请检查后台的图片 API 网址是否填成了网站首页、控制台地址或错误路径。"
+          : `图片接口返回了非 JSON 内容：${contentType || "未知类型"}`,
+        status: upstream.status,
+        preview: text.replace(/\s+/g, " ").slice(0, 220)
+      }
+    });
+    return true;
+  }
   response.writeHead(upstream.status, {
-    "Content-Type": upstream.headers.get("content-type") || "application/json; charset=utf-8",
+    "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store"
   });
-  response.end(text);
+  response.end(parsed ? JSON.stringify(parsed) : text);
   return true;
 }
 
