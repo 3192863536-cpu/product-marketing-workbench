@@ -1,0 +1,1004 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>产品营销工作台</title>
+    <meta
+      name="description"
+      content="把用户洞察、市场信号与产品机会分析做成可交互的产品营销工作台。"
+    />
+    <meta name="theme-color" content="#f7f5ef" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <section class="auth-screen" id="authScreen" aria-label="账号登录注册">
+      <div class="auth-brand-panel">
+        <a class="site-logo auth-logo" href="#top" aria-label="产品营销工作台">
+          <strong>PMW</strong>
+          <span>产品营销工作台</span>
+        </a>
+        <div class="auth-copy">
+          <p>ACCESS CONTROL</p>
+          <h1>产品营销工作台</h1>
+          <span>把账号、API 配置、历史报告和后台管理统一放进同一个工作流。</span>
+        </div>
+        <div class="auth-proof-list" aria-label="平台能力">
+          <span>注册账号</span>
+          <span>登录校验</span>
+          <span>后台管理</span>
+          <span>历史沉淀</span>
+        </div>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-tabs" role="tablist" aria-label="账号入口">
+          <button class="active" id="loginTabBtn" type="button" data-auth-mode="login">登录</button>
+          <button id="registerTabBtn" type="button" data-auth-mode="register">注册</button>
+        </div>
+
+        <form class="auth-form active" id="loginForm">
+          <header>
+            <span>已有账号</span>
+            <h2>欢迎回来</h2>
+          </header>
+          <label class="field compact-field">
+            <span>邮箱</span>
+            <input id="loginEmailInput" type="email" placeholder="name@company.com" autocomplete="email" required />
+          </label>
+          <label class="field compact-field">
+            <span>密码</span>
+            <input id="loginPasswordInput" type="password" placeholder="请输入密码" autocomplete="current-password" required />
+          </label>
+          <button class="auth-submit" type="submit">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 12h12M12 6l6 6-6 6" />
+            </svg>
+            <span>登录工作台</span>
+          </button>
+        </form>
+
+        <form class="auth-form" id="registerForm" hidden>
+          <header>
+            <span>创建账号</span>
+            <h2>注册后开始使用</h2>
+          </header>
+          <label class="field compact-field">
+            <span>姓名</span>
+            <input id="registerNameInput" type="text" placeholder="例如：张三" autocomplete="name" required />
+          </label>
+          <label class="field compact-field">
+            <span>邮箱</span>
+            <input id="registerEmailInput" type="email" placeholder="name@company.com" autocomplete="email" required />
+          </label>
+          <label class="field compact-field">
+            <span>密码</span>
+            <input id="registerPasswordInput" type="password" placeholder="至少 6 位" autocomplete="new-password" minlength="6" required />
+          </label>
+          <button class="auth-submit" type="submit">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            <span>注册并进入</span>
+          </button>
+          <p class="auth-note">首个注册账号自动成为管理员。</p>
+        </form>
+      </div>
+    </section>
+
+    <header class="site-topbar" id="top">
+      <a class="site-logo" href="#top" aria-label="产品营销工作台首页">
+        <strong>PMW</strong>
+        <span>产品营销工作台</span>
+      </a>
+      <nav class="site-nav" aria-label="平台导航">
+        <a class="active" href="#top" data-nav-view="home">首页</a>
+        <a href="#workbench" data-nav-view="workbench">营销智投</a>
+        <a href="#workbench" data-nav-view="history">历史报告</a>
+      </nav>
+      <div class="site-actions">
+        <span class="site-phone">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.35 1.9.66 2.8a2 2 0 0 1-.45 2.11L8.1 9.86a16 16 0 0 0 6 6l1.23-1.23a2 2 0 0 1 2.11-.45c.9.31 1.84.53 2.8.66A2 2 0 0 1 22 16.92Z" />
+          </svg>
+          17714492324
+        </span>
+        <span class="site-user" id="currentUserLabel">未登录</span>
+        <button class="site-secondary" id="openAdminBtn" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h16v14H4z" />
+            <path d="M8 9h3M8 13h8M14 9h2" />
+          </svg>
+          <span>后台管理</span>
+        </button>
+        <button class="site-primary" id="logoutBtn" type="button">退出登录</button>
+      </div>
+    </header>
+
+    <section class="platform-hero" aria-label="产品营销平台">
+      <div class="hero-copy">
+        <p class="hero-kicker">PRODUCT MARKETING WORKBENCH</p>
+        <h1>让洞察<span>更快</span>让营销<span>更精准</span></h1>
+        <p class="hero-subtitle">做产品团队、广告主和增长顾问的桥梁，把用户画像、外部信号与 AI 策略报告连成完整决策链路。</p>
+      </div>
+      <div class="hero-proof-strip" aria-label="平台能力概览">
+        <article>
+          <img
+            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80"
+            alt="代表核心用户画像的人像素材"
+          />
+          <div>
+            <span>Audience</span>
+            <strong>核心人群</strong>
+            <small>锁定高价值购买者</small>
+          </div>
+        </article>
+        <article>
+          <img
+            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80"
+            alt="代表全网信号分析的数据屏幕"
+          />
+          <div>
+            <span>Signal</span>
+            <strong>全网联索</strong>
+            <small>捕捉市场与竞品变化</small>
+          </div>
+        </article>
+        <article>
+          <img
+            src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80"
+            alt="代表社区讨论与协作的工作场景"
+          />
+          <div>
+            <span>Community</span>
+            <strong>社区舆论</strong>
+            <small>识别真实情绪与阻力</small>
+          </div>
+        </article>
+        <article>
+          <img
+            src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=80"
+            alt="代表策略报告讨论的会议场景"
+          />
+          <div>
+            <span>Strategy</span>
+            <strong>AI 报告</strong>
+            <small>生成可交付分析稿</small>
+          </div>
+        </article>
+        <article>
+          <img
+            src="https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=900&q=80"
+            alt="代表历史报告复盘的专业办公场景"
+          />
+          <div>
+            <span>History</span>
+            <strong>历史复盘</strong>
+            <small>沉淀团队决策资产</small>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <main class="app-shell" id="workbench">
+      <aside class="input-panel" aria-label="洞察输入">
+        <header class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img">
+              <path d="M5 12h14M12 5v14M7.5 7.5l9 9M16.5 7.5l-9 9" />
+            </svg>
+          </div>
+          <div>
+            <p>Marketing Intelligence</p>
+            <h1>产品营销工作台</h1>
+          </div>
+        </header>
+
+        <div class="panel-note" aria-label="工作台说明">
+          <p>从产品假设到用户画像、情绪动因、外部信号与机会优先级。为产品评审、增长会议和客户策略工作准备。</p>
+        </div>
+
+        <form id="insightForm" class="control-stack">
+          <label class="field primary-field">
+            <span>产品 / 服务</span>
+            <textarea
+              id="productInput"
+              rows="4"
+              placeholder="例如：海蓝之谜、社区咖啡店、B2B销售训练系统"
+            >海蓝之谜</textarea>
+          </label>
+
+          <fieldset class="field">
+            <legend>智能模式</legend>
+            <div class="option-list intelligence-list">
+              <label>
+                <input type="radio" name="intelligence" value="concise" />
+                <span>简洁版</span>
+              </label>
+              <label>
+                <input type="radio" name="intelligence" value="strategic" checked />
+                <span>策略版</span>
+              </label>
+              <label>
+                <input type="radio" name="intelligence" value="operator" />
+                <span>执行版</span>
+              </label>
+              <label>
+                <input type="radio" name="intelligence" value="investor" />
+                <span>投资人版</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="field">
+            <legend>当前阶段</legend>
+            <div class="segmented">
+              <label>
+                <input type="radio" name="stage" value="概念阶段" />
+                <span>概念</span>
+              </label>
+              <label>
+                <input type="radio" name="stage" value="开发阶段" />
+                <span>开发</span>
+              </label>
+              <label>
+                <input type="radio" name="stage" value="已经成熟" checked />
+                <span>成熟</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="field">
+            <legend>分析侧重</legend>
+            <div class="option-list">
+              <label>
+                <input type="radio" name="focus" value="full" checked />
+                <span>全流程分析</span>
+              </label>
+              <label>
+                <input type="radio" name="focus" value="persona" />
+                <span>仅用户画像</span>
+              </label>
+              <label>
+                <input type="radio" name="focus" value="emotion" />
+                <span>仅情绪洞察</span>
+              </label>
+              <label>
+                <input type="radio" name="focus" value="opportunity" />
+                <span>仅产品机会</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <label class="field">
+            <span>补充上下文</span>
+            <textarea
+              id="contextInput"
+              rows="5"
+              placeholder="目标客户、价格、渠道、竞品、已有卖点或当前困惑"
+            ></textarea>
+          </label>
+
+          <section class="external-signals" aria-label="外部信号">
+            <div class="config-heading">
+              <div>
+                <span>外部信号</span>
+                <p>让模型单独输出全网证据与社区舆情，真实联网能力取决于 API/模型。</p>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <label>
+                <input id="webSearchInput" type="checkbox" />
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
+                  <path d="M3.6 9h16.8M3.6 15h16.8M12 3c2.2 2.4 3.3 5.4 3.3 9s-1.1 6.6-3.3 9M12 3c-2.2 2.4-3.3 5.4-3.3 9s1.1 6.6 3.3 9" />
+                </svg>
+                <span>全网联索</span>
+              </label>
+              <label>
+                <input id="communityInput" type="checkbox" />
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M7 10.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM17 10.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+                  <path d="M3 20a4 4 0 0 1 8 0M13 20a4 4 0 0 1 8 0" />
+                </svg>
+                <span>社区舆论</span>
+              </label>
+            </div>
+            <div class="signal-config-grid">
+              <section class="signal-config-card" id="webSearchPanel" aria-label="全网联索配置">
+                <div class="signal-config-head">
+                  <span>全网联索配置</span>
+                  <b id="webSearchStatus">未开启</b>
+                </div>
+                <p>用于补充市场规模、竞品动态、搜索趋势、价格信息、行业新闻与公开资料证据。</p>
+                <label class="field compact-field">
+                  <span>检索关键词</span>
+                  <input
+                    id="searchKeywordsInput"
+                    type="text"
+                    placeholder="品牌、品类、竞品、用户痛点，逗号分隔"
+                    autocomplete="off"
+                  />
+                </label>
+                <div class="signal-chip-row" aria-label="全网联索输出范围">
+                  <span>竞品线索</span>
+                  <span>市场证据</span>
+                  <span>价格信号</span>
+                  <span>新闻动态</span>
+                </div>
+                <button class="signal-page-link" type="button" data-signal-page="web-intel">
+                  <span>进入全网联索页面</span>
+                </button>
+              </section>
+
+              <section class="signal-config-card" id="communityPanel" aria-label="社区舆论配置">
+                <div class="signal-config-head">
+                  <span>社区舆论配置</span>
+                  <b id="communityStatus">未开启</b>
+                </div>
+                <p>用于补充用户真实表达、购买顾虑、抱怨高频词、种草语境与内容平台传播机会。</p>
+                <label class="field compact-field">
+                  <span>社区平台</span>
+                  <input
+                    id="communitySourcesInput"
+                    type="text"
+                    placeholder="小红书、知乎、微博、抖音、B站、Reddit"
+                    autocomplete="off"
+                  />
+                </label>
+                <div class="signal-chip-row" aria-label="社区舆论输出范围">
+                  <span>情绪关键词</span>
+                  <span>用户原话</span>
+                  <span>异议阻力</span>
+                  <span>内容机会</span>
+                </div>
+                <button class="signal-page-link" type="button" data-signal-page="community">
+                  <span>进入社区舆论页面</span>
+                </button>
+              </section>
+            </div>
+            <p class="signal-note">不支持联网时，报告必须标注“联网数据待验证 / 社区舆情假设”，并列出下一步采样问题。</p>
+          </section>
+
+          <div class="button-row">
+            <button class="primary-action" id="generateBtn" type="submit" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 12h12M12 6l6 6-6 6" />
+              </svg>
+              <span>生成洞察</span>
+            </button>
+            <button class="ghost-action" id="sampleBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 7h16M4 12h10M4 17h7" />
+              </svg>
+              <span>示例填充</span>
+            </button>
+          </div>
+        </form>
+
+        <section class="history-panel" aria-label="历史记录">
+          <div class="config-heading">
+            <div>
+              <span>历史记录</span>
+              <p>自动保存最近生成的营销洞察报告。</p>
+            </div>
+            <button id="clearHistoryBtn" type="button">清空</button>
+          </div>
+          <div class="history-list" id="historyList">
+            <article class="history-empty">
+              <span>暂无记录</span>
+              <p>生成报告后会保存在本机浏览器中。</p>
+            </article>
+          </div>
+        </section>
+
+        <footer class="input-footer">
+          <span>Marketing-ready output</span>
+          <span>Markdown export</span>
+        </footer>
+      </aside>
+
+      <section class="report-panel" aria-label="洞察报告">
+        <nav class="report-toolbar">
+          <div class="report-tabs" role="tablist" aria-label="报告分区">
+            <button class="active" id="personasTab" type="button" role="tab" aria-selected="true" aria-controls="personasSection" data-section="personas">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M16 19a4 4 0 0 0-8 0M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM18 10a2.5 2.5 0 0 1 2 4M6 10a2.5 2.5 0 0 0-2 4" />
+              </svg>
+              <span>用户画像</span>
+            </button>
+            <button id="emotionsTab" type="button" role="tab" aria-selected="false" aria-controls="emotionsSection" data-section="emotions">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 21s7-4.35 7-11a7 7 0 0 0-14 0c0 6.65 7 11 7 11Z" />
+                <path d="M9 10h.01M15 10h.01M9 14c1.5 1 4.5 1 6 0" />
+              </svg>
+              <span>情绪动因</span>
+            </button>
+            <button id="opportunitiesTab" type="button" role="tab" aria-selected="false" aria-controls="opportunitiesSection" data-section="opportunities">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-9" />
+              </svg>
+              <span>产品机会</span>
+            </button>
+            <button id="signalsTab" type="button" role="tab" aria-selected="false" aria-controls="signalsSection" data-section="signals">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 18V6M4 6h6l2 3h8v9H4Z" />
+                <path d="M8 13h4M15 13h2" />
+              </svg>
+              <span>外部信号</span>
+            </button>
+            <button id="aiTab" type="button" role="tab" aria-selected="false" aria-controls="aiSection" data-section="ai">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3v3M12 18v3M4.64 4.64l2.12 2.12M17.24 17.24l2.12 2.12M3 12h3M18 12h3M4.64 19.36l2.12-2.12M17.24 6.76l2.12-2.12" />
+                <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
+              </svg>
+              <span>AI 报告</span>
+            </button>
+          </div>
+          <div class="toolbar-actions">
+            <button id="highlightBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 20h16M7 16l9-9 3 3-9 9H7v-3Z" />
+              </svg>
+              <span>AI 高亮</span>
+            </button>
+            <button id="imageToolBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="M8 13l2.5-2.5L15 15l2-2 3 3" />
+                <path d="M8 9h.01" />
+              </svg>
+              <span>生成图片</span>
+            </button>
+            <button id="copyBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 9h10v10H9z" />
+                <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+              </svg>
+              <span>复制</span>
+            </button>
+            <button id="downloadBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+              </svg>
+              <span>导出 MD</span>
+            </button>
+          </div>
+        </nav>
+
+        <section class="image-studio" id="imageStudio" aria-label="图片生成工作台" hidden>
+          <header class="image-studio-head">
+            <div>
+              <span>视觉生成</span>
+              <h2>根据产品生成图片</h2>
+              <p>以左侧当前产品为核心，把产品定位、目标用户、价值卖点和使用场景转成可交给生图模型的专业提示词。</p>
+            </div>
+            <button id="closeImageStudioBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+              <span>收起</span>
+            </button>
+          </header>
+
+          <div class="image-studio-grid">
+            <div class="image-prompt-panel">
+              <label class="field image-prompt-field">
+                <span>生图提示词</span>
+                <textarea
+                  id="imagePromptInput"
+                  rows="8"
+                  placeholder="先点击“生成提示词”，系统会根据当前产品提炼画面主体、目标用户、核心卖点、风格、构图和商业用途。"
+                ></textarea>
+              </label>
+
+              <div class="image-action-row">
+                <button id="imagePromptBtn" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3v4M12 17v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M3 12h4M17 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                  </svg>
+                  <span>生成产品提示词</span>
+                </button>
+                <button id="copyImagePromptBtn" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M9 9h10v10H9z" />
+                    <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+                  </svg>
+                  <span>复制提示词</span>
+                </button>
+              </div>
+
+              <div class="image-config-grid" aria-label="图片生成配置">
+                <label class="field compact-field image-wide-field">
+                  <span>品牌标识 / Logo 文案</span>
+                  <input
+                    id="imageLogoInput"
+                    type="text"
+                    placeholder="例如：产品营销工作台、PMW、你的品牌名"
+                    autocomplete="off"
+                  />
+                </label>
+                <label class="field compact-field">
+                  <span>画面比例</span>
+                  <select id="imageSizeInput">
+                    <option value="1:1">1:1 正方形</option>
+                    <option value="16:9" selected>16:9 横版</option>
+                    <option value="9:16">9:16 竖版</option>
+                    <option value="4:3">4:3 横版</option>
+                    <option value="3:4">3:4 竖版</option>
+                  </select>
+                </label>
+                <label class="field compact-field">
+                  <span>质量</span>
+                  <select id="imageQualityInput">
+                    <option value="medium" selected>标准</option>
+                    <option value="high">高清</option>
+                    <option value="low">快速</option>
+                  </select>
+                </label>
+                <label class="field compact-field">
+                  <span>数量</span>
+                  <select id="imageCountInput">
+                    <option value="1" selected>1 张</option>
+                    <option value="2">2 张</option>
+                    <option value="3">3 张</option>
+                    <option value="4">4 张</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="image-submit-row">
+                <div class="image-submit-actions">
+                  <button class="primary-action image-batch-action" id="imageBatchBtn" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="3" y="4" width="9" height="9" rx="2" />
+                      <rect x="12" y="11" width="9" height="9" rx="2" />
+                      <path d="M15 4h3a2 2 0 0 1 2 2v2M4 16v2a2 2 0 0 0 2 2h3" />
+                    </svg>
+                    <span>一键生成多图</span>
+                  </button>
+                  <button class="ghost-action image-single-action" id="imageGenerateBtn" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 12h12M12 6l6 6-6 6" />
+                    </svg>
+                    <span>生成当前提示词</span>
+                  </button>
+              </div>
+              <p id="imageStatus">图片生成使用后台系统配置中的连接信息与图片模型。</p>
+              </div>
+            </div>
+
+            <aside class="image-result-panel" id="imageResultPanel" aria-live="polite">
+              <div class="image-empty" id="imageEmptyState">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="M8 13l2.5-2.5L15 15l2-2 3 3" />
+                </svg>
+                <span>等待生成</span>
+                <p>图片会在这里预览。适合生成首页主视觉、客户提案封面、社媒配图和产品概念图。</p>
+              </div>
+              <div class="image-preview-slot" id="imagePreviewSlot"></div>
+              <div class="image-gallery" id="imageGallery" hidden></div>
+              <div class="image-result-meta">
+                <span id="imageMeta">尚未生成图片</span>
+                <a id="imageDownloadLink" href="#" download="marketing-visual.png" hidden>下载图片</a>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <article class="report-hero">
+          <div class="report-heading">
+            <p id="reportKicker">已经成熟 / 全流程分析</p>
+            <h2 id="reportTitle">海蓝之谜</h2>
+            <p class="report-subtitle">将粗糙假设整理成可讨论、可验证、可导出的产品洞察报告。</p>
+            <div class="report-signature" id="reportSignature" aria-label="报告特征">
+              <span>Strategic intelligence</span>
+              <span>Boardroom-ready</span>
+              <span>Local draft</span>
+            </div>
+          </div>
+          <dl class="signal-grid">
+            <div>
+              <dt>核心用户</dt>
+              <dd id="coreSignal">API 消耗大户</dd>
+            </div>
+            <div>
+              <dt>首要抓手</dt>
+              <dd id="actionSignal">成本与稳定</dd>
+            </div>
+            <div>
+              <dt>信号模式</dt>
+              <dd id="signalMode">本地洞察</dd>
+            </div>
+            <div>
+              <dt>采样范围</dt>
+              <dd id="signalScope">未启用外部信号</dd>
+            </div>
+          </dl>
+        </article>
+
+        <div class="report-body">
+          <section class="report-section active" id="personasSection" role="tabpanel" aria-labelledby="personasTab" data-report-section="personas"></section>
+          <section class="report-section" id="emotionsSection" role="tabpanel" aria-labelledby="emotionsTab" data-report-section="emotions" hidden></section>
+          <section class="report-section" id="opportunitiesSection" role="tabpanel" aria-labelledby="opportunitiesTab" data-report-section="opportunities" hidden></section>
+          <section class="report-section" id="signalsSection" role="tabpanel" aria-labelledby="signalsTab" data-report-section="signals" hidden></section>
+          <section class="report-section" id="aiSection" role="tabpanel" aria-labelledby="aiTab" data-report-section="ai" hidden>
+            <article class="ai-report empty">
+              <div class="card-meta">
+                <span>AI 报告</span>
+                <span>等待生成</span>
+              </div>
+              <h3>配置 API 后生成深度报告</h3>
+              <p>工作台会使用当前产品信息、分析侧重和本地结构化洞察，调用你配置的模型生成一份可直接复制给团队或客户的 Markdown 报告。</p>
+            </article>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <section class="signal-page" id="webIntelPage" aria-label="全网联索页面" hidden>
+      <header class="signal-page-hero">
+        <div>
+          <span>WEB INTELLIGENCE</span>
+          <h1>全网联索</h1>
+          <p>把公开网页、竞品信息、行业新闻、价格线索和搜索趋势整理成可验证的市场证据输入。</p>
+        </div>
+        <button class="signal-return" type="button" data-return-view="workbench">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 12H5M11 6l-6 6 6 6" />
+          </svg>
+          <span>返回工作台</span>
+        </button>
+      </header>
+
+      <div class="signal-page-grid">
+        <section class="signal-page-card">
+          <div class="signal-page-heading">
+            <span>检索配置</span>
+            <b id="webPageStatus">未开启</b>
+          </div>
+          <label class="toggle-large">
+            <input id="webSearchPageInput" type="checkbox" />
+            <span>
+              <strong>启用全网联索</strong>
+              <small>报告会单独输出公开证据、待验证来源和下一步检索问题。</small>
+            </span>
+          </label>
+          <label class="field compact-field">
+            <span>检索关键词</span>
+            <input
+              id="webSearchPageKeywordsInput"
+              type="text"
+              placeholder="品牌、品类、竞品、用户痛点，逗号分隔"
+              autocomplete="off"
+            />
+          </label>
+          <div class="signal-page-actions">
+            <button class="primary-action" id="saveWebSignalBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12l4 4L19 6" />
+              </svg>
+              <span>保存全网联索配置</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="signal-page-card">
+          <div class="signal-page-heading">
+            <span>输出范围</span>
+          </div>
+          <div class="signal-page-list">
+            <article>
+              <strong>竞品线索</strong>
+              <p>竞品定位、功能变化、价格策略、差异化说法。</p>
+            </article>
+            <article>
+              <strong>市场证据</strong>
+              <p>公开新闻、行业材料、搜索关键词和用户需求迹象。</p>
+            </article>
+            <article>
+              <strong>验证问题</strong>
+              <p>当模型不能真实联网时，明确标注待验证假设和采样问题。</p>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <section class="signal-related-panel" aria-label="全网联索相关资讯">
+        <div class="signal-page-heading">
+          <div>
+            <span>相关资讯</span>
+            <h2>当前产品的全网线索</h2>
+          </div>
+          <div class="signal-heading-actions">
+            <b id="webIntelProductBadge">待验证</b>
+            <button class="signal-refresh-btn" id="refreshWebIntelBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M16 16l4 4" />
+              </svg>
+              <span>联网搜索</span>
+            </button>
+          </div>
+        </div>
+        <p class="signal-related-note">通过本机联网搜索代理抓取公开网页结果。所有卡片都必须带真实来源链接；搜索失败时只显示失败原因和采样计划。</p>
+        <div class="signal-intel-feed" id="webIntelInsights"></div>
+      </section>
+    </section>
+
+    <section class="signal-page" id="communityPage" aria-label="社区舆论页面" hidden>
+      <header class="signal-page-hero">
+        <div>
+          <span>COMMUNITY VOICE</span>
+          <h1>社区舆论</h1>
+          <p>把小红书、知乎、微博、抖音、B站、Reddit 等社区里的用户表达整理成情绪、阻力与内容机会。</p>
+        </div>
+        <button class="signal-return" type="button" data-return-view="workbench">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 12H5M11 6l-6 6 6 6" />
+          </svg>
+          <span>返回工作台</span>
+        </button>
+      </header>
+
+      <div class="signal-page-grid">
+        <section class="signal-page-card">
+          <div class="signal-page-heading">
+            <span>舆论配置</span>
+            <b id="communityPageStatus">未开启</b>
+          </div>
+          <label class="toggle-large">
+            <input id="communityPageInput" type="checkbox" />
+            <span>
+              <strong>启用社区舆论</strong>
+              <small>报告会单独输出用户原话、情绪动因、购买顾虑与内容切入点。</small>
+            </span>
+          </label>
+          <label class="field compact-field">
+            <span>社区平台</span>
+            <input
+              id="communityPageSourcesInput"
+              type="text"
+              placeholder="小红书、知乎、微博、抖音、B站、Reddit"
+              autocomplete="off"
+            />
+          </label>
+          <div class="signal-page-actions">
+            <button class="primary-action" id="saveCommunitySignalBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12l4 4L19 6" />
+              </svg>
+              <span>保存社区舆论配置</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="signal-page-card">
+          <div class="signal-page-heading">
+            <span>输出范围</span>
+          </div>
+          <div class="signal-page-list">
+            <article>
+              <strong>情绪关键词</strong>
+              <p>提炼用户高频情绪、真实抱怨、期待与犹豫。</p>
+            </article>
+            <article>
+              <strong>用户原话</strong>
+              <p>整理可用于营销判断的典型表达和反对意见。</p>
+            </article>
+            <article>
+              <strong>内容机会</strong>
+              <p>输出适合种草、解释、对比、转化的内容切入点。</p>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <section class="signal-related-panel" aria-label="社区舆论相关资讯">
+        <div class="signal-page-heading">
+          <div>
+            <span>相关资讯</span>
+            <h2>当前产品的社区声量</h2>
+          </div>
+          <div class="signal-heading-actions">
+            <b id="communityProductBadge">样本待采集</b>
+            <button class="signal-refresh-btn" id="refreshCommunityBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M16 16l4 4" />
+              </svg>
+              <span>联网搜索</span>
+            </button>
+          </div>
+        </div>
+        <p class="signal-related-note">通过搜索引擎限定社区平台域名采集真实讨论线索。结果以来源链接为准，不把本地推测写成舆情事实。</p>
+        <div class="signal-intel-feed" id="communityInsights"></div>
+      </section>
+    </section>
+
+    <section class="admin-shell" id="adminPanel" aria-label="后台管理" hidden>
+      <aside class="admin-sidebar">
+        <div>
+          <p>ADMIN CONSOLE</p>
+          <h2>后台管理</h2>
+          <span>账号、配置与报告资产概览</span>
+        </div>
+        <nav aria-label="后台导航">
+          <a class="active" href="#adminPanel">总览</a>
+          <a href="#adminUsers">用户管理</a>
+          <a href="#adminReports">历史报告</a>
+          <a href="#adminSettings">系统配置</a>
+        </nav>
+      </aside>
+
+      <div class="admin-main">
+        <header class="admin-header">
+          <div>
+            <span>运营后台</span>
+            <h1>产品营销工作台管理中心</h1>
+          </div>
+          <button class="admin-return" id="returnWorkbenchBtn" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M19 12H5M11 6l-6 6 6 6" />
+            </svg>
+            <span>返回工作台</span>
+          </button>
+        </header>
+
+        <section class="admin-metrics" aria-label="后台总览">
+          <article>
+            <span>注册用户</span>
+            <strong id="adminUserCount">0</strong>
+            <small>本机账号库</small>
+          </article>
+          <article>
+            <span>历史报告</span>
+            <strong id="adminReportCount">0</strong>
+            <small>最近生成记录</small>
+          </article>
+          <article>
+            <span>API 状态</span>
+            <strong id="adminApiStatus">未配置</strong>
+            <small id="adminApiModel">等待模型名</small>
+          </article>
+          <article>
+            <span>当前用户</span>
+            <strong id="adminCurrentRole">成员</strong>
+            <small id="adminCurrentEmail">-</small>
+          </article>
+        </section>
+
+        <section class="admin-section" id="adminUsers">
+          <div class="admin-section-heading">
+            <div>
+              <span>用户管理</span>
+              <h2>账号列表</h2>
+            </div>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>角色</th>
+                  <th>注册时间</th>
+                  <th>最后登录</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="admin-section" id="adminReports">
+          <div class="admin-section-heading">
+            <div>
+              <span>报告资产</span>
+              <h2>历史报告</h2>
+            </div>
+            <button id="adminClearHistoryBtn" type="button">清空报告记录</button>
+          </div>
+          <div class="admin-report-list" id="adminReportList"></div>
+        </section>
+
+        <section class="admin-section" id="adminSettings">
+          <div class="admin-section-heading">
+            <div>
+              <span>系统配置</span>
+              <h2>API 连接信息</h2>
+            </div>
+          </div>
+          <section class="api-config admin-api-config" aria-label="API 配置">
+            <div class="config-heading">
+              <div>
+                <span>API 配置</span>
+                <p>连接信息仅保存在本机浏览器，用于启用洞察生成与图片生成。</p>
+              </div>
+              <b id="configStatus">未配置</b>
+            </div>
+
+            <label class="field compact-field">
+              <span>API 网址</span>
+              <input
+                id="apiUrlInput"
+                type="url"
+                placeholder="https://api.example.com/v1"
+                autocomplete="url"
+                required
+              />
+            </label>
+
+            <label class="field compact-field">
+              <span>API 令牌</span>
+              <input
+                id="apiTokenInput"
+                type="password"
+                placeholder="sk-..."
+                autocomplete="off"
+                required
+              />
+            </label>
+
+            <label class="field compact-field">
+              <span>模型名</span>
+              <input
+                id="modelInput"
+                type="text"
+                placeholder="例如：gpt-4.1、claude-sonnet、deepseek-chat"
+                autocomplete="off"
+                required
+              />
+            </label>
+
+            <label class="field compact-field">
+              <span>图片 API 网址</span>
+              <input
+                id="imageApiUrlInput"
+                type="url"
+                placeholder="https://api.example.com/v1/images/generations"
+                autocomplete="url"
+              />
+            </label>
+
+            <label class="field compact-field">
+              <span>图片模型</span>
+              <input id="imageModelInput" type="text" placeholder="gpt-image-2" autocomplete="off" />
+            </label>
+
+            <div class="config-actions">
+              <button id="saveConfigBtn" type="button">保存到本机</button>
+              <button id="clearConfigBtn" type="button">清除配置</button>
+            </div>
+          </section>
+          <dl class="admin-config-list">
+            <div>
+              <dt>API 网址</dt>
+              <dd id="adminApiUrl">未配置</dd>
+            </div>
+            <div>
+              <dt>模型名</dt>
+              <dd id="adminModelName">未配置</dd>
+            </div>
+            <div>
+              <dt>令牌状态</dt>
+              <dd id="adminTokenStatus">未保存</dd>
+            </div>
+            <div>
+              <dt>图片 API</dt>
+              <dd id="adminImageApiUrl">未配置</dd>
+            </div>
+            <div>
+              <dt>图片模型</dt>
+              <dd id="adminImageModelName">未配置</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

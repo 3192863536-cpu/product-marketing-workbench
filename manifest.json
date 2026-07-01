@@ -1,0 +1,12 @@
+{
+  "name": "产品营销工作台",
+  "short_name": "产品营销",
+  "description": "用户画像、外部信号、情绪动因与产品机会分析的网页版工作台。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f5ef",
+  "theme_color": "#0f766e",
+  "orientation": "any",
+  "categories": ["business", "productivity"],
+  "lang": "zh-CN"
+}

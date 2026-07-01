@@ -1,0 +1,37 @@
+# Local/generated files
+.agents/
+.codex-doc-cache/
+output/
+rendered_resume/
+word_render_pages/
+vendor_py/
+deploy-package/
+deploy-package.zip
+
+# Logs
+*.log
+server.err.log
+server.log
+
+# Local documents and one-off scripts not part of the web app
+*.docx
+*_text*.txt
+para_xml_dump.txt
+resume_*.txt
+optimized_text_check.txt
+requested_text_check.txt
+export_resume_pdf.ps1
+patch_resume.py
+redo_resume_from_request.py
+make_rain_lotus_video.py
+Codex与Claude远程安装说明.md
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.env
+.env.*
+
+# Ignore unused image candidates; keep the active login background only.
+assets/*
+!assets/auth-face-bg.jpg
