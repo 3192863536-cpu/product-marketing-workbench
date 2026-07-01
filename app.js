@@ -149,6 +149,7 @@ function applyServerSession(payload = {}) {
   state.currentUser = payload.user || null;
   state.users = Array.isArray(payload.users) ? payload.users : [];
   if (payload.config) applyServerConfig(payload.config);
+  updateApiConfigState();
   updateAuthUi();
   renderAdmin();
 }
@@ -893,6 +894,7 @@ async function loadApiConfig() {
   } catch {
     applyServerConfig({});
   }
+  updateApiConfigState();
 }
 
 async function clearApiConfig() {
