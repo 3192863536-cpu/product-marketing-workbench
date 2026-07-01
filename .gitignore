@@ -7,6 +7,7 @@ word_render_pages/
 vendor_py/
 deploy-package/
 deploy-package.zip
+data/
 
 # Logs
 *.log

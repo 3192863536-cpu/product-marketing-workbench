@@ -1,12 +1,16 @@
 const fs = require("fs/promises");
 const http = require("http");
+const crypto = require("crypto");
 const path = require("path");
 const { URL } = require("url");
 
 const root = __dirname;
+const dataDir = path.join(root, "data");
+const dataFile = path.join(dataDir, "app-data.json");
 const port = Number(process.env.PORT || 5174);
 const host = process.env.HOST || "127.0.0.1";
 const searchTimeoutMs = 18000;
+const sessionCookieName = "pmw_session";
 const trendRadarApiUrl = process.env.TRENDRADAR_NEWSNOW_API_URL || "https://newsnow.busiyi.world/api/s";
 
 const mimeTypes = {
@@ -59,6 +63,145 @@ const platformParamsToRemove = {
   weibo: new Set(["band_rank", "Refer", "t"])
 };
 
+let appData = null;
+
+function emptyData() {
+  return {
+    users: [],
+    sessions: {},
+    config: {
+      url: "",
+      token: "",
+      model: "",
+      imageUrl: "",
+      imageModel: "gpt-image-2",
+      updatedAt: ""
+    }
+  };
+}
+
+async function loadData() {
+  if (appData) return appData;
+  try {
+    const content = await fs.readFile(dataFile, "utf8");
+    appData = { ...emptyData(), ...JSON.parse(content) };
+    appData.config = { ...emptyData().config, ...(appData.config || {}) };
+    appData.sessions = appData.sessions || {};
+    appData.users = Array.isArray(appData.users) ? appData.users : [];
+  } catch {
+    appData = emptyData();
+  }
+  return appData;
+}
+
+async function saveData() {
+  await fs.mkdir(dataDir, { recursive: true });
+  await fs.writeFile(dataFile, JSON.stringify(appData || emptyData(), null, 2), "utf8");
+}
+
+function publicUser(user) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    createdAt: user.createdAt,
+    lastLoginAt: user.lastLoginAt
+  };
+}
+
+function configForClient(config = {}) {
+  return {
+    url: config.url || "",
+    model: config.model || "",
+    imageUrl: config.imageUrl || "",
+    imageModel: config.imageModel || "gpt-image-2",
+    tokenConfigured: Boolean(config.token),
+    ready: Boolean(config.url && config.token && config.model)
+  };
+}
+
+function parseCookies(request) {
+  const header = request.headers.cookie || "";
+  return Object.fromEntries(
+    header
+      .split(";")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => {
+        const index = item.indexOf("=");
+        if (index === -1) return [item, ""];
+        return [decodeURIComponent(item.slice(0, index)), decodeURIComponent(item.slice(index + 1))];
+      })
+  );
+}
+
+function cookieHeader(name, value, options = {}) {
+  const parts = [`${encodeURIComponent(name)}=${encodeURIComponent(value)}`, "Path=/", "HttpOnly", "SameSite=Lax"];
+  if (options.maxAge !== undefined) parts.push(`Max-Age=${options.maxAge}`);
+  if (options.secure) parts.push("Secure");
+  return parts.join("; ");
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
+  const hash = crypto.scryptSync(String(password), salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+function verifyPassword(password, stored) {
+  const [salt, expected] = String(stored || "").split(":");
+  if (!salt || !expected) return false;
+  const actual = crypto.scryptSync(String(password), salt, 64);
+  const expectedBuffer = Buffer.from(expected, "hex");
+  return expectedBuffer.length === actual.length && crypto.timingSafeEqual(actual, expectedBuffer);
+}
+
+async function readJsonBody(request, limit = 1_000_000) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > limit) throw new Error("请求体过大");
+    chunks.push(chunk);
+  }
+  const text = Buffer.concat(chunks).toString("utf8");
+  return text ? JSON.parse(text) : {};
+}
+
+async function currentSession(request) {
+  const data = await loadData();
+  const sessionId = parseCookies(request)[sessionCookieName];
+  if (!sessionId) return { data, sessionId: "", user: null };
+  const session = data.sessions[sessionId];
+  if (!session || new Date(session.expiresAt).getTime() < Date.now()) {
+    delete data.sessions[sessionId];
+    await saveData();
+    return { data, sessionId: "", user: null };
+  }
+  const user = data.users.find((item) => item.id === session.userId);
+  return { data, sessionId, user: user || null };
+}
+
+async function requireUser(request, response) {
+  const session = await currentSession(request);
+  if (!session.user) {
+    sendJson(response, 401, { ok: false, error: "请先登录" });
+    return null;
+  }
+  return session;
+}
+
+async function requireAdmin(request, response) {
+  const session = await requireUser(request, response);
+  if (!session) return null;
+  if (session.user.role !== "admin") {
+    sendJson(response, 403, { ok: false, error: "需要管理员权限" });
+    return null;
+  }
+  return session;
+}
+
 function sendJson(response, status, payload) {
   response.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
@@ -67,6 +210,219 @@ function sendJson(response, status, payload) {
     "Access-Control-Allow-Headers": "Content-Type"
   });
   response.end(JSON.stringify(payload));
+}
+
+function sendJsonWithHeaders(response, status, payload, headers = {}) {
+  response.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    ...headers
+  });
+  response.end(JSON.stringify(payload));
+}
+
+async function handleAuth(request, response, requestUrl) {
+  const pathname = requestUrl.pathname;
+  if (pathname === "/api/auth/me" && request.method === "GET") {
+    const { data, user } = await currentSession(request);
+    sendJson(response, 200, {
+      ok: true,
+      user: publicUser(user),
+      users: user?.role === "admin" ? data.users.map(publicUser) : [],
+      config: user ? configForClient(data.config) : null
+    });
+    return true;
+  }
+
+  if (pathname === "/api/auth/register" && request.method === "POST") {
+    const data = await loadData();
+    const body = await readJsonBody(request);
+    const name = clean(body.name || "");
+    const email = clean(body.email || "").toLowerCase();
+    const password = String(body.password || "");
+    if (!name || !email || password.length < 6) {
+      sendJson(response, 400, { ok: false, error: "请填写姓名、邮箱和至少 6 位密码" });
+      return true;
+    }
+    if (data.users.some((user) => user.email === email)) {
+      sendJson(response, 409, { ok: false, error: "这个邮箱已经注册，请直接登录" });
+      return true;
+    }
+    const now = new Date().toISOString();
+    const user = {
+      id: crypto.randomUUID(),
+      name,
+      email,
+      passwordHash: hashPassword(password),
+      role: data.users.length ? "member" : "admin",
+      createdAt: now,
+      lastLoginAt: now
+    };
+    data.users.unshift(user);
+    const sessionId = crypto.randomBytes(32).toString("hex");
+    data.sessions[sessionId] = {
+      userId: user.id,
+      createdAt: now,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString()
+    };
+    await saveData();
+    sendJsonWithHeaders(response, 200, {
+      ok: true,
+      user: publicUser(user),
+      users: data.users.map(publicUser),
+      config: configForClient(data.config)
+    }, {
+      "Set-Cookie": cookieHeader(sessionCookieName, sessionId, { maxAge: 60 * 60 * 24 * 14 })
+    });
+    return true;
+  }
+
+  if (pathname === "/api/auth/login" && request.method === "POST") {
+    const data = await loadData();
+    const body = await readJsonBody(request);
+    const email = clean(body.email || "").toLowerCase();
+    const password = String(body.password || "");
+    const user = data.users.find((item) => item.email === email);
+    if (!user || !verifyPassword(password, user.passwordHash)) {
+      sendJson(response, 401, { ok: false, error: "邮箱或密码不正确" });
+      return true;
+    }
+    user.lastLoginAt = new Date().toISOString();
+    const sessionId = crypto.randomBytes(32).toString("hex");
+    data.sessions[sessionId] = {
+      userId: user.id,
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString()
+    };
+    await saveData();
+    sendJsonWithHeaders(response, 200, {
+      ok: true,
+      user: publicUser(user),
+      users: user.role === "admin" ? data.users.map(publicUser) : [],
+      config: configForClient(data.config)
+    }, {
+      "Set-Cookie": cookieHeader(sessionCookieName, sessionId, { maxAge: 60 * 60 * 24 * 14 })
+    });
+    return true;
+  }
+
+  if (pathname === "/api/auth/logout" && request.method === "POST") {
+    const { data, sessionId } = await currentSession(request);
+    if (sessionId) delete data.sessions[sessionId];
+    await saveData();
+    sendJsonWithHeaders(response, 200, { ok: true }, {
+      "Set-Cookie": cookieHeader(sessionCookieName, "", { maxAge: 0 })
+    });
+    return true;
+  }
+
+  return false;
+}
+
+async function handleConfig(request, response) {
+  if (request.method === "GET") {
+    const session = await requireAdmin(request, response);
+    if (!session) return true;
+    sendJson(response, 200, { ok: true, config: configForClient(session.data.config) });
+    return true;
+  }
+  if (request.method === "POST") {
+    const session = await requireAdmin(request, response);
+    if (!session) return true;
+    const body = await readJsonBody(request);
+    const current = session.data.config || {};
+    const shouldClear = Boolean(body.clear);
+    session.data.config = {
+      ...current,
+      url: clean(body.url || ""),
+      model: clean(body.model || ""),
+      token: shouldClear ? "" : clean(body.token || "") || current.token || "",
+      imageUrl: clean(body.imageUrl || ""),
+      imageModel: clean(body.imageModel || "") || "gpt-image-2",
+      updatedAt: new Date().toISOString()
+    };
+    await saveData();
+    sendJson(response, 200, { ok: true, config: configForClient(session.data.config) });
+    return true;
+  }
+  sendJson(response, 405, { ok: false, error: "Method not allowed" });
+  return true;
+}
+
+function normalizeChatUrl(url) {
+  const trimmed = clean(url).replace(/\/+$/, "");
+  if (!trimmed) return "";
+  if (trimmed.endsWith("/chat/completions")) return trimmed;
+  if (trimmed.endsWith("/v1")) return `${trimmed}/chat/completions`;
+  return `${trimmed}/v1/chat/completions`;
+}
+
+function normalizeImageUrl(url) {
+  const trimmed = clean(url).replace(/\/+$/, "");
+  if (!trimmed) return "";
+  if (trimmed.endsWith("/images/generations")) return trimmed;
+  if (trimmed.endsWith("/chat/completions")) return trimmed.replace(/\/chat\/completions$/, "/images/generations");
+  return `${trimmed}/images/generations`;
+}
+
+async function proxyAiChat(request, response) {
+  const session = await requireUser(request, response);
+  if (!session) return true;
+  const config = session.data.config || {};
+  if (!config.url || !config.token || !config.model) {
+    sendJson(response, 400, { ok: false, error: "后台 API 配置未完成" });
+    return true;
+  }
+  const body = await readJsonBody(request, 4_000_000);
+  const upstream = await fetch(normalizeChatUrl(config.url), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.token}`
+    },
+    body: JSON.stringify({
+      ...body,
+      model: config.model
+    })
+  });
+  response.writeHead(upstream.status, {
+    "Content-Type": upstream.headers.get("content-type") || "application/json; charset=utf-8",
+    "Cache-Control": "no-store"
+  });
+  if (upstream.body) {
+    for await (const chunk of upstream.body) response.write(chunk);
+  }
+  response.end();
+  return true;
+}
+
+async function proxyImageGeneration(request, response) {
+  const session = await requireUser(request, response);
+  if (!session) return true;
+  const config = session.data.config || {};
+  const imageUrl = config.imageUrl || normalizeImageUrl(config.url || "");
+  if (!imageUrl || !config.token) {
+    sendJson(response, 400, { ok: false, error: "后台图片 API 配置未完成" });
+    return true;
+  }
+  const body = await readJsonBody(request, 4_000_000);
+  const upstream = await fetch(imageUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.token}`
+    },
+    body: JSON.stringify({
+      ...body,
+      model: config.imageModel || "gpt-image-2"
+    })
+  });
+  const text = await upstream.text();
+  response.writeHead(upstream.status, {
+    "Content-Type": upstream.headers.get("content-type") || "application/json; charset=utf-8",
+    "Cache-Control": "no-store"
+  });
+  response.end(text);
+  return true;
 }
 
 function decodeHtml(value = "") {
@@ -563,12 +919,34 @@ const server = http.createServer(async (request, response) => {
     sendJson(response, 204, {});
     return;
   }
+  try {
+    if (requestUrl.pathname.startsWith("/api/auth/")) {
+      if (await handleAuth(request, response, requestUrl)) return;
+    }
+    if (requestUrl.pathname === "/api/config") {
+      await handleConfig(request, response);
+      return;
+    }
+    if (requestUrl.pathname === "/api/ai/chat") {
+      await proxyAiChat(request, response);
+      return;
+    }
+    if (requestUrl.pathname === "/api/images/generations") {
+      await proxyImageGeneration(request, response);
+      return;
+    }
+  } catch (error) {
+    sendJson(response, 500, { ok: false, error: error.message || "服务器内部错误" });
+    return;
+  }
   if (requestUrl.pathname === "/api/search") {
     if (request.method !== "GET") {
       sendJson(response, 405, { ok: false, error: "Only GET is supported" });
       return;
     }
     try {
+      const session = await requireUser(request, response);
+      if (!session) return;
       sendJson(response, 200, await runSearch(requestUrl));
     } catch (error) {
       sendJson(response, 502, {

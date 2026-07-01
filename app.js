@@ -55,6 +55,14 @@ const state = {
   users: [],
   currentUser: null,
   currentView: "home",
+  serverConfig: {
+    url: "",
+    model: "",
+    imageUrl: "",
+    imageModel: "gpt-image-2",
+    tokenConfigured: false,
+    ready: false
+  },
   onlineSignals: {
     web: {
       status: "idle",
@@ -84,6 +92,24 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 function clean(value) {
   return value.trim().replace(/\s+/g, " ");
+}
+
+async function apiJson(url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    credentials: "same-origin",
+    headers: {
+      Accept: "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {})
+    },
+    body: options.body && typeof options.body !== "string" ? JSON.stringify(options.body) : options.body
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload.ok === false) {
+    throw new Error(payload.error || `HTTP ${response.status}`);
+  }
+  return payload;
 }
 
 function hasExternalSignals(signals = {}) {
@@ -119,19 +145,19 @@ function normalizeEmail(value) {
   return clean(value).toLowerCase();
 }
 
-function loadUsers() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(usersStorageKey) || "[]");
-    state.users = Array.isArray(saved) ? saved : [];
-  } catch {
-    state.users = [];
-    localStorage.removeItem(usersStorageKey);
-  }
+function applyServerSession(payload = {}) {
+  state.currentUser = payload.user || null;
+  state.users = Array.isArray(payload.users) ? payload.users : [];
+  if (payload.config) applyServerConfig(payload.config);
+  updateAuthUi();
+  renderAdmin();
 }
 
-function persistUsers() {
-  localStorage.setItem(usersStorageKey, JSON.stringify(state.users));
+function loadUsers() {
+  state.users = [];
 }
+
+function persistUsers() {}
 
 function findUserByEmail(email) {
   const normalized = normalizeEmail(email);
@@ -151,33 +177,17 @@ function publicUser(user) {
 }
 
 function persistSession(user) {
-  if (!user) {
-    localStorage.removeItem(sessionStorageKey);
-    state.currentUser = null;
-    return;
-  }
-  const session = {
-    userId: user.id,
-    email: user.email,
-    signedInAt: new Date().toISOString()
-  };
-  localStorage.setItem(sessionStorageKey, JSON.stringify(session));
-  state.currentUser = publicUser(user);
+  state.currentUser = user ? publicUser(user) : null;
 }
 
-function restoreSession() {
+async function restoreSession() {
   try {
-    const session = JSON.parse(localStorage.getItem(sessionStorageKey) || "null");
-    if (!session) return null;
-    const user = state.users.find((item) => item.id === session.userId || item.email === session.email);
-    if (!user) {
-      localStorage.removeItem(sessionStorageKey);
-      return null;
-    }
-    state.currentUser = publicUser(user);
+    const payload = await apiJson("/api/auth/me");
+    applyServerSession(payload);
     return state.currentUser;
   } catch {
-    localStorage.removeItem(sessionStorageKey);
+    state.currentUser = null;
+    state.users = [];
     return null;
   }
 }
@@ -213,7 +223,7 @@ function ensureAuthenticated() {
   return false;
 }
 
-function handleRegister(event) {
+async function handleRegister(event) {
   event.preventDefault();
   const name = clean($("#registerNameInput").value);
   const email = normalizeEmail($("#registerEmailInput").value);
@@ -223,52 +233,46 @@ function handleRegister(event) {
     showToast("请填写姓名、邮箱和至少 6 位密码");
     return;
   }
-  if (findUserByEmail(email)) {
-    showToast("这个邮箱已经注册，请直接登录");
-    setAuthMode("login");
-    $("#loginEmailInput").value = email;
-    return;
+  try {
+    const payload = await apiJson("/api/auth/register", {
+      method: "POST",
+      body: { name, email, password }
+    });
+    applyServerSession(payload);
+    showWorkbenchView("home");
+    showToast(payload.user?.role === "admin" ? "注册成功，已成为管理员" : "注册成功");
+  } catch (error) {
+    showToast(error.message.slice(0, 60));
+    if (error.message.includes("已经注册")) {
+      setAuthMode("login");
+      $("#loginEmailInput").value = email;
+    }
   }
-
-  const now = new Date().toISOString();
-  const user = {
-    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    name,
-    email,
-    password,
-    role: state.users.length ? "member" : "admin",
-    createdAt: now,
-    lastLoginAt: now
-  };
-  state.users = [user, ...state.users];
-  persistUsers();
-  persistSession(user);
-  updateAuthUi();
-  showWorkbenchView("home");
-  renderAdmin();
-  showToast(user.role === "admin" ? "注册成功，已成为管理员" : "注册成功");
 }
 
-function handleLogin(event) {
+async function handleLogin(event) {
   event.preventDefault();
   const email = normalizeEmail($("#loginEmailInput").value);
   const password = $("#loginPasswordInput").value.trim();
-  const user = findUserByEmail(email);
-  if (!user || user.password !== password) {
-    showToast("邮箱或密码不正确");
-    return;
+  try {
+    const payload = await apiJson("/api/auth/login", {
+      method: "POST",
+      body: { email, password }
+    });
+    applyServerSession(payload);
+    showWorkbenchView("home");
+    showToast("登录成功");
+  } catch (error) {
+    showToast(error.message.slice(0, 60));
   }
-  user.lastLoginAt = new Date().toISOString();
-  persistUsers();
-  persistSession(user);
-  updateAuthUi();
-  showWorkbenchView("home");
-  renderAdmin();
-  showToast("登录成功");
 }
 
-function logout() {
+async function logout() {
+  try {
+    await apiJson("/api/auth/logout", { method: "POST" });
+  } catch {}
   persistSession(null);
+  state.users = [];
   updateAuthUi();
   showWorkbenchView("home");
   setAuthMode("login");
@@ -828,47 +832,84 @@ function getApiConfig() {
 
 function isApiConfigReady() {
   const config = getApiConfig();
-  return Boolean(config.url && config.token && config.model);
+  return Boolean(config.url && config.model && (config.token || state.serverConfig.tokenConfigured));
+}
+
+function applyServerConfig(config = {}) {
+  state.serverConfig = {
+    url: config.url || "",
+    model: config.model || "",
+    imageUrl: config.imageUrl || "",
+    imageModel: config.imageModel || "gpt-image-2",
+    tokenConfigured: Boolean(config.tokenConfigured),
+    ready: Boolean(config.ready)
+  };
+  if ($("#apiUrlInput")) $("#apiUrlInput").value = state.serverConfig.url;
+  if ($("#modelInput")) $("#modelInput").value = state.serverConfig.model;
+  if ($("#apiTokenInput")) {
+    $("#apiTokenInput").value = "";
+    $("#apiTokenInput").placeholder = state.serverConfig.tokenConfigured ? "已保存，留空不修改" : "sk-...";
+  }
+  if ($("#imageApiUrlInput")) $("#imageApiUrlInput").value = state.serverConfig.imageUrl || normalizeImageUrl(state.serverConfig.url);
+  if ($("#imageModelInput")) $("#imageModelInput").value = state.serverConfig.imageModel || "gpt-image-2";
 }
 
 function updateApiConfigState() {
-  state.apiConfigReady = isApiConfigReady();
+  const unsavedReady = isApiConfigReady() && !state.serverConfig.ready;
+  state.apiConfigReady = Boolean(state.serverConfig.ready);
   $(".api-config")?.classList.toggle("ready", state.apiConfigReady);
-  if ($("#configStatus")) $("#configStatus").textContent = state.apiConfigReady ? "已配置" : "未配置";
+  if ($("#configStatus")) $("#configStatus").textContent = state.apiConfigReady ? "已配置" : unsavedReady ? "待保存" : "未配置";
   $("#generateBtn").disabled = state.isGenerating || !state.apiConfigReady;
   renderAdmin();
 }
 
-function saveApiConfig() {
+async function saveApiConfig() {
   const config = getApiConfig();
-  localStorage.setItem("insightApiConfig", JSON.stringify(config));
-  saveImageConfig({ silent: true });
-  updateApiConfigState();
-  showToast("API 配置已保存到本机");
-}
-
-function loadApiConfig() {
+  const imageConfig = getImageConfig();
   try {
-    const saved = JSON.parse(localStorage.getItem("insightApiConfig") || "null");
-    if (!saved) return;
-    $("#apiUrlInput").value = saved.url || "";
-    $("#apiTokenInput").value = saved.token || "";
-    $("#modelInput").value = saved.model || "";
-  } catch {
-    localStorage.removeItem("insightApiConfig");
+    const payload = await apiJson("/api/config", {
+      method: "POST",
+      body: {
+        url: config.url,
+        token: config.token,
+        model: config.model,
+        imageUrl: imageConfig.url,
+        imageModel: imageConfig.model
+      }
+    });
+    applyServerConfig(payload.config);
+    saveImageConfig({ silent: true });
+    updateApiConfigState();
+    showToast("API 配置已保存到服务器");
+  } catch (error) {
+    showToast(`保存失败：${error.message.slice(0, 48)}`);
   }
 }
 
-function clearApiConfig() {
-  localStorage.removeItem("insightApiConfig");
+async function loadApiConfig() {
+  try {
+    const payload = await apiJson("/api/config");
+    applyServerConfig(payload.config);
+  } catch {
+    applyServerConfig({});
+  }
+}
+
+async function clearApiConfig() {
+  try {
+    await apiJson("/api/config", {
+      method: "POST",
+      body: { clear: true, url: "", token: "", model: "", imageUrl: "", imageModel: "gpt-image-2" }
+    });
+  } catch {}
   localStorage.removeItem(imageConfigStorageKey);
+  applyServerConfig({});
   $("#apiUrlInput").value = "";
   $("#apiTokenInput").value = "";
   $("#modelInput").value = "";
   $("#imageApiUrlInput").value = "";
   $("#imageModelInput").value = "gpt-image-2";
   updateApiConfigState();
-  syncImageConfigFromApi();
   showToast("API 配置已清除");
 }
 
@@ -1942,14 +1983,12 @@ async function generateHighlightPhrases() {
   const config = getApiConfig();
 
   try {
-    const response = await fetch(normalizeChatUrl(config.url), {
+    const response = await fetch("/api/ai/chat", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.token}`
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: config.model,
         messages: [
           {
             role: "system",
@@ -1995,7 +2034,7 @@ function getImageConfig() {
   const apiConfig = getApiConfig();
   return {
     url: clean($("#imageApiUrlInput").value) || normalizeImageUrl(apiConfig.url),
-    token: apiConfig.token,
+    token: state.serverConfig.tokenConfigured ? "server-managed" : apiConfig.token,
     model: clean($("#imageModelInput").value) || "gpt-image-2",
     logo: clean($("#imageLogoInput").value),
     size: $("#imageSizeInput").value,
@@ -2022,11 +2061,11 @@ function saveImageConfig(options = {}) {
 
 function loadImageConfig() {
   const apiConfig = getApiConfig();
+  $("#imageApiUrlInput").value = state.serverConfig.imageUrl || normalizeImageUrl(apiConfig.url);
+  $("#imageModelInput").value = state.serverConfig.imageModel || "gpt-image-2";
   try {
     const saved = JSON.parse(localStorage.getItem(imageConfigStorageKey) || "null");
     if (saved) {
-      $("#imageApiUrlInput").value = saved.url || normalizeImageUrl(apiConfig.url);
-      $("#imageModelInput").value = saved.model || "gpt-image-2";
       $("#imageLogoInput").value = saved.logo || "";
       $("#imageSizeInput").value = saved.size || "16:9";
       $("#imageQualityInput").value = saved.quality || "medium";
@@ -2036,8 +2075,6 @@ function loadImageConfig() {
   } catch {
     localStorage.removeItem(imageConfigStorageKey);
   }
-  $("#imageApiUrlInput").value = normalizeImageUrl(apiConfig.url);
-  $("#imageModelInput").value = "gpt-image-2";
   $("#imageLogoInput").value = "";
 }
 
@@ -2234,14 +2271,12 @@ async function generateImagePrompt(options = {}) {
   setImageStatus("正在结合当前产品和全网联索结果提炼视觉提示词", "loading");
   const config = getApiConfig();
   try {
-    const response = await fetch(normalizeChatUrl(config.url), {
+    const response = await fetch("/api/ai/chat", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.token}`
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: config.model,
         messages: [
           { role: "system", content: "你是商业视觉创意总监，擅长把产品策略报告转成专业生图提示词。" },
           { role: "user", content: buildImagePromptRequest() }
@@ -2425,15 +2460,13 @@ function closeImageLightbox() {
 }
 
 async function requestImageGeneration(prompt, config, signal) {
-  const response = await fetch(config.url, {
+  const response = await fetch("/api/images/generations", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.token}`
+      "Content-Type": "application/json"
     },
     signal,
     body: JSON.stringify({
-      model: config.model,
       prompt,
       size: imageSizeToPixels(config.size),
       quality: config.quality,
@@ -2629,15 +2662,13 @@ async function generateAiReport(report) {
   state.streamController = new AbortController();
   await prepareExternalSignalsForReport(report);
 
-  const response = await fetch(normalizeChatUrl(config.url), {
+  const response = await fetch("/api/ai/chat", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.token}`
+      "Content-Type": "application/json"
     },
     signal: state.streamController.signal,
     body: JSON.stringify({
-      model: config.model,
       messages: [
         { role: "system", content: "你是一名严谨、克制、商业敏感度高的产品策略顾问。" },
         { role: "user", content: buildAiPrompt(report) }
@@ -2964,7 +2995,7 @@ function renderAdmin() {
   $("#adminCurrentEmail").textContent = state.currentUser.email || "-";
   $("#adminApiUrl").textContent = config.url || "未配置";
   $("#adminModelName").textContent = config.model || "未配置";
-  $("#adminTokenStatus").textContent = maskToken(config.token);
+  $("#adminTokenStatus").textContent = state.serverConfig.tokenConfigured ? "已保存" : "未保存";
   $("#adminImageApiUrl").textContent = imageConfig.url || "未配置";
   $("#adminImageModelName").textContent = imageConfig.model || "未配置";
   renderAdminUsers();
@@ -3016,11 +3047,11 @@ function showToast(message) {
   showToast.timer = setTimeout(() => toast.classList.remove("show"), 1800);
 }
 
-function init() {
+async function init() {
   loadUsers();
-  restoreSession();
+  await restoreSession();
   updateAuthUi();
-  loadApiConfig();
+  if (state.currentUser?.role === "admin") await loadApiConfig();
   loadImageConfig();
   loadHistory();
   renderHistory();
