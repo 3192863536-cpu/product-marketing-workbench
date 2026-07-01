@@ -2353,6 +2353,10 @@ function imageCountForModel(value, model = "") {
   return normalizeImageModelName(model).includes("dall-e-3") ? 1 : count;
 }
 
+function requestedImageCount(value) {
+  return Math.min(Math.max(Number(value || 1), 1), 4);
+}
+
 function extractImageUrls(data) {
   const items = Array.isArray(data.data) ? data.data : [];
   const dataImages = items
@@ -2549,7 +2553,7 @@ async function generateImageFromPrompt(options = {}) {
   }
   const prompt = clean(options.prompt || $("#imagePromptInput").value);
   const config = { ...getImageConfig(), ...(options.config || {}) };
-  const count = imageCountForModel(config.count, config.model);
+  const count = requestedImageCount(config.count);
   config.count = count;
   const silent = Boolean(options.silent);
   const manageLoading = options.manageLoading !== false;
@@ -2618,8 +2622,7 @@ async function generateImageFromPrompt(options = {}) {
 async function generateMultiImagesOneClick() {
   if (state.imageBatchGenerating) return;
   const config = getImageConfig();
-  const currentCount = Math.min(Math.max(Number(config.count || 1), 1), 4);
-  const targetCount = Math.max(currentCount, 3);
+  const targetCount = requestedImageCount(config.count);
   $("#imageCountInput").value = String(targetCount);
   saveImageConfig();
 
