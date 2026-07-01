@@ -2306,21 +2306,65 @@ async function generateImagePrompt(options = {}) {
   }
 }
 
-function imageSizeToPixels(value) {
+function normalizeImageModelName(model = "") {
+  return String(model || "").trim().toLowerCase();
+}
+
+function imageSizeToPixels(value, model = "") {
+  const modelName = normalizeImageModelName(model);
+  if (modelName.includes("dall-e-3")) {
+    return {
+      "1:1": "1024x1024",
+      "16:9": "1792x1024",
+      "9:16": "1024x1792",
+      "4:3": "1792x1024",
+      "3:4": "1024x1792"
+    }[value] || "1024x1024";
+  }
+
+  if (modelName.includes("gpt-image-2")) {
+    return {
+      "1:1": "1024x1024",
+      "16:9": "2048x1152",
+      "9:16": "1152x2048",
+      "4:3": "1536x1024",
+      "3:4": "1024x1536"
+    }[value] || "1024x1024";
+  }
+
   return {
     "1:1": "1024x1024",
-    "16:9": "1792x1024",
-    "9:16": "1024x1792",
+    "16:9": "1536x1024",
+    "9:16": "1024x1536",
     "4:3": "1536x1024",
     "3:4": "1024x1536"
   }[value] || "1024x1024";
 }
 
+function imageQualityForModel(value, model = "") {
+  const modelName = normalizeImageModelName(model);
+  if (modelName.includes("dall-e-3")) return value === "high" ? "hd" : "standard";
+  if (modelName.includes("dall-e-2")) return "";
+  return value || "medium";
+}
+
+function imageCountForModel(value, model = "") {
+  const count = Math.min(Math.max(Number(value || 1), 1), 4);
+  return normalizeImageModelName(model).includes("dall-e-3") ? 1 : count;
+}
+
 function extractImageUrls(data) {
   const items = Array.isArray(data.data) ? data.data : [];
-  return items
+  const dataImages = items
     .map((item) => item.b64_json ? `data:image/png;base64,${item.b64_json}` : item.url)
     .filter(Boolean);
+  const outputImages = Array.isArray(data.output)
+    ? data.output
+        .filter((item) => item && (item.type === "image_generation_call" || item.result || item.image_url))
+        .map((item) => item.result ? `data:image/png;base64,${item.result}` : item.image_url?.url || item.url)
+        .filter(Boolean)
+    : [];
+  return [...dataImages, ...outputImages];
 }
 
 function renderImageGallery(images, activeIndex = 0) {
@@ -2462,18 +2506,21 @@ function closeImageLightbox() {
 }
 
 async function requestImageGeneration(prompt, config, signal) {
+  const requestBody = {
+    prompt,
+    size: imageSizeToPixels(config.size, config.model),
+    n: imageCountForModel(config.count, config.model)
+  };
+  const quality = imageQualityForModel(config.quality, config.model);
+  if (quality) requestBody.quality = quality;
+
   const response = await fetch("/api/images/generations", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     signal,
-    body: JSON.stringify({
-      prompt,
-      size: imageSizeToPixels(config.size),
-      quality: config.quality,
-      n: config.count
-    })
+    body: JSON.stringify(requestBody)
   });
 
   const text = await response.text();
@@ -2502,7 +2549,7 @@ async function generateImageFromPrompt(options = {}) {
   }
   const prompt = clean(options.prompt || $("#imagePromptInput").value);
   const config = { ...getImageConfig(), ...(options.config || {}) };
-  const count = Math.min(Math.max(Number(config.count || 1), 1), 4);
+  const count = imageCountForModel(config.count, config.model);
   config.count = count;
   const silent = Boolean(options.silent);
   const manageLoading = options.manageLoading !== false;

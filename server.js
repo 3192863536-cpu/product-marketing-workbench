@@ -364,6 +364,39 @@ function normalizeImageUrl(url) {
   return `${trimmed}/images/generations`;
 }
 
+function normalizeImageModelName(model = "") {
+  return String(model || "").trim().toLowerCase();
+}
+
+function adaptImageRequestBody(body, model) {
+  const modelName = normalizeImageModelName(model);
+  const next = { ...body, model };
+  const size = String(next.size || "");
+
+  if (modelName.includes("dall-e-3")) {
+    next.n = 1;
+    if (!["1024x1024", "1792x1024", "1024x1792"].includes(size)) {
+      next.size = size.includes("1792") || size.startsWith("1536") ? "1792x1024" : size.endsWith("1536") ? "1024x1792" : "1024x1024";
+    }
+    next.quality = next.quality === "high" || next.quality === "hd" ? "hd" : "standard";
+    return next;
+  }
+
+  if (modelName.includes("dall-e-2")) {
+    next.n = Math.min(Math.max(Number(next.n || 1), 1), 4);
+    if (!["256x256", "512x512", "1024x1024"].includes(size)) next.size = "1024x1024";
+    delete next.quality;
+    return next;
+  }
+
+  if (!modelName.includes("gpt-image-2")) {
+    if (size === "1792x1024" || size === "2048x1152") next.size = "1536x1024";
+    if (size === "1024x1792" || size === "1152x2048") next.size = "1024x1536";
+  }
+  next.n = Math.min(Math.max(Number(next.n || 1), 1), 4);
+  return next;
+}
+
 async function proxyAiChat(request, response) {
   const session = await requireUser(request, response);
   if (!session) return true;
@@ -411,10 +444,7 @@ async function proxyImageGeneration(request, response) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${config.token}`
     },
-    body: JSON.stringify({
-      ...body,
-      model: config.imageModel || "gpt-image-2"
-    })
+    body: JSON.stringify(adaptImageRequestBody(body, config.imageModel || "gpt-image-2"))
   });
   const text = await upstream.text();
   const contentType = upstream.headers.get("content-type") || "";
