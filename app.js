@@ -1413,77 +1413,41 @@ function buildTocTree(toc) {
   return tree;
 }
 
-function renderFloatingToc(toc) {
+function buildInlineReportTocHtml(toc) {
   state.currentToc = toc;
-  const existing = $("#floatingToc");
-  if (existing) existing.remove();
-  $("#aiSection").classList.remove("with-report-toc");
-  if (!toc.length) return;
+  if (!toc.length) return "";
   const tree = buildTocTree(toc);
 
-  const nav = document.createElement("nav");
-  nav.id = "floatingToc";
-  nav.className = "floating-toc";
-  nav.setAttribute("aria-label", "报告快速定位");
-  nav.innerHTML = `
-    <div class="toc-shell">
-      <div class="toc-header">
+  return `
+    <nav class="report-inline-toc" aria-label="报告目录">
+      <div class="report-inline-toc-header">
         <span>报告目录</span>
-        <button class="toc-collapse-btn" type="button" aria-label="折叠目录" aria-expanded="true">收起</button>
+        <small>${toc.length} 个章节</small>
       </div>
-      <div class="floating-toc-groups">
+      <div class="report-inline-toc-list">
         ${tree
-        .map(
-          (item, index) => `
-            <details class="toc-group" ${index === 0 ? "open" : ""}>
-              <summary>
-                <a href="#${item.id}">${escapeHtml(item.title)}</a>
-              </summary>
+          .map(
+            (item) => `
+              <a class="toc-level-${item.level}" href="#${item.id}">${escapeHtml(item.title)}</a>
               ${
                 item.children.length
-                  ? `<div class="toc-children">
-                      ${item.children
-                        .map(
-                          (child) => `
-                            <a class="toc-level-${child.level}" href="#${child.id}">
-                              ${escapeHtml(child.title)}
-                            </a>
-                          `
-                        )
-                        .join("")}
-                    </div>`
+                  ? item.children
+                      .map(
+                        (child) => `
+                          <a class="toc-level-${child.level}" href="#${child.id}">
+                            ${escapeHtml(child.title)}
+                          </a>
+                        `
+                      )
+                      .join("")
                   : ""
               }
-            </details>
-          `
-        )
-        .join("")}
+            `
+          )
+          .join("")}
       </div>
-    </div>
+    </nav>
   `;
-  $("#aiSection").appendChild(nav);
-  $("#aiSection").classList.add("with-report-toc");
-  nav.querySelectorAll(".toc-group > summary a").forEach((link) => {
-    link.addEventListener("click", (event) => {
-      event.stopPropagation();
-    });
-  });
-  setupFloatingTocCollapse(nav);
-}
-
-function setupFloatingTocCollapse(nav) {
-  const button = nav.querySelector(".toc-collapse-btn");
-  const syncButton = () => {
-    const collapsed = nav.classList.contains("collapsed");
-    button.textContent = collapsed ? "目录" : "收起";
-    button.setAttribute("aria-label", collapsed ? "展开目录" : "折叠目录");
-    button.setAttribute("aria-expanded", String(!collapsed));
-  };
-  syncButton();
-  button.addEventListener("click", () => {
-    nav.classList.toggle("collapsed");
-    syncButton();
-  });
 }
 
 function highlightReportText(html) {
@@ -1819,6 +1783,10 @@ function renderAiReport(status, content) {
     status === "ready" || status === "streaming" || status === "partial"
       ? markdownToHtml(content)
       : `<p>${escapeHtml(content)}</p>`;
+  const tocHtml =
+    status === "ready" || status === "streaming" || status === "partial"
+      ? buildInlineReportTocHtml(toc)
+      : "";
   $("#aiSection").innerHTML = `
     <article class="ai-report ${status}">
       <div class="card-meta">
@@ -1832,14 +1800,11 @@ function renderAiReport(status, content) {
         </div>
       ` : ""}
       <h3 data-ai-title>${title}</h3>
+      ${tocHtml}
       <div class="ai-report-content">${contentHtml}</div>
     </article>
   `;
-  if (status === "ready" || status === "partial") {
-    renderFloatingToc(toc);
-  } else {
-    renderFloatingToc([]);
-  }
+  if (status !== "ready" && status !== "streaming" && status !== "partial") state.currentToc = [];
 }
 
 function renderStableStreamingReport(content) {
@@ -1853,8 +1818,20 @@ function renderStableStreamingReport(content) {
   const status = article.querySelector("[data-ai-status]");
   const title = article.querySelector("[data-ai-title]");
   const reportContent = article.querySelector(".ai-report-content");
+  const existingToc = article.querySelector(".report-inline-toc");
+  const toc = buildReportToc(content);
   if (status) status.textContent = "流式接收";
   if (title) title.textContent = "正在流式生成报告";
+  if (toc.length) {
+    const tocHtml = buildInlineReportTocHtml(toc);
+    if (existingToc) {
+      existingToc.outerHTML = tocHtml;
+    } else if (reportContent) {
+      reportContent.insertAdjacentHTML("beforebegin", tocHtml);
+    }
+  } else if (existingToc) {
+    existingToc.remove();
+  }
   if (reportContent) reportContent.innerHTML = markdownToHtml(content);
   updateStreamIndicator(`正在接收内容，已收到 ${state.receivedChars} 字`);
 }
