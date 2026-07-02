@@ -449,18 +449,18 @@ svg {
   position: relative;
   z-index: 1;
   align-self: center;
-  border: 1px solid oklch(1 0 0 / 0.48);
+  border: 1px solid oklch(1 0 0 / 0.4);
   border-radius: 24px;
   padding: 16px;
   background:
-    linear-gradient(180deg, oklch(1 0 0 / 0.78), oklch(0.986 0.006 355 / 0.56)),
-    oklch(1 0 0 / 0.48);
+    linear-gradient(180deg, oklch(1 0 0 / 0.58), oklch(0.986 0.006 355 / 0.34)),
+    oklch(1 0 0 / 0.24);
   box-shadow:
     0 34px 96px oklch(0.18 0.05 155 / 0.2),
-    0 18px 56px oklch(0.68 0.16 355 / 0.11),
-    inset 0 1px 0 oklch(1 0 0 / 0.62);
-  backdrop-filter: blur(30px) saturate(1.16);
-  -webkit-backdrop-filter: blur(30px) saturate(1.16);
+    0 18px 56px oklch(0.68 0.16 355 / 0.08),
+    inset 0 1px 0 oklch(1 0 0 / 0.5);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
 }
 
 .auth-tabs {
@@ -468,9 +468,9 @@ svg {
   grid-template-columns: 1fr 1fr;
   gap: 5px;
   padding: 5px;
-  border: 1px solid oklch(0.84 0.016 355 / 0.56);
+  border: 1px solid oklch(0.84 0.016 355 / 0.44);
   border-radius: 14px;
-  background: oklch(0.97 0.008 355 / 0.32);
+  background: oklch(0.97 0.008 355 / 0.18);
 }
 
 .auth-tabs button {
@@ -483,11 +483,11 @@ svg {
 }
 
 .auth-tabs button.active {
-  background: oklch(1 0 0 / 0.68);
+  background: oklch(1 0 0 / 0.52);
   color: var(--primary);
   box-shadow:
-    0 16px 34px oklch(0.16 0.02 250 / 0.08),
-    inset 0 1px 0 oklch(1 0 0 / 0.68);
+    0 16px 34px oklch(0.16 0.02 250 / 0.06),
+    inset 0 1px 0 oklch(1 0 0 / 0.56);
 }
 
 .auth-form {
@@ -511,15 +511,15 @@ svg {
 .auth-card input[type="password"],
 .auth-card input[type="text"],
 .auth-card input[type="email"] {
-  border-color: oklch(0.86 0.014 355 / 0.72);
-  background: oklch(1 0 0 / 0.54);
+  border-color: oklch(0.86 0.014 355 / 0.76);
+  background: oklch(1 0 0 / 0.68);
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.46);
 }
 
 .auth-card input[type="password"]:hover,
 .auth-card input[type="text"]:hover,
 .auth-card input[type="email"]:hover {
-  background: oklch(1 0 0 / 0.66);
+  background: oklch(1 0 0 / 0.76);
 }
 
 .auth-card input[type="password"]:focus,
@@ -528,7 +528,7 @@ svg {
 .auth-card input[type="password"]:focus-visible,
 .auth-card input[type="text"]:focus-visible,
 .auth-card input[type="email"]:focus-visible {
-  background: oklch(1 0 0 / 0.76);
+  background: oklch(1 0 0 / 0.84);
 }
 
 .auth-verify-field {
@@ -545,11 +545,11 @@ svg {
   min-height: 42px;
   display: flex;
   align-items: center;
-  border: 1px solid oklch(0.86 0.014 355 / 0.72);
+  border: 1px solid oklch(0.86 0.014 355 / 0.76);
   border-radius: var(--radius-small);
   padding: 0 14px;
   background:
-    linear-gradient(180deg, oklch(1 0 0 / 0.62), oklch(0.98 0.006 355 / 0.42));
+    linear-gradient(180deg, oklch(1 0 0 / 0.7), oklch(0.98 0.006 355 / 0.52));
   color: var(--ink);
   font-size: 14px;
   line-height: 1.2;
@@ -559,12 +559,12 @@ svg {
 
 .auth-verify-row button {
   min-height: 42px;
-  border: 1px solid oklch(0.86 0.014 355 / 0.72);
+  border: 1px solid oklch(0.86 0.014 355 / 0.76);
   border-radius: var(--radius-small);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: oklch(1 0 0 / 0.58);
+  background: oklch(1 0 0 / 0.66);
   color: var(--primary);
   transition:
     transform 160ms var(--ease),
@@ -575,7 +575,7 @@ svg {
 .auth-verify-row button:hover,
 .auth-verify-row button:focus-visible {
   border-color: var(--focus);
-  background: oklch(1 0 0 / 0.74);
+  background: oklch(1 0 0 / 0.8);
   transform: translateY(-1px);
 }
 
