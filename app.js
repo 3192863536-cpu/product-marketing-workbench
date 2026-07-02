@@ -2102,15 +2102,18 @@ function buildFallbackImagePrompt() {
   const contextLine = context ? `产品补充信息：${context}。` : "";
   const logoText = clean($("#imageLogoInput")?.value || "") || report.input.product;
   return [
-    `为产品“${report.input.product}”生成一张高端、克制、专业的商业视觉主图。`,
+    `为产品“${report.input.product}”生成一张高端、克制、专业的真实产品商业视觉主图。`,
     contextLine,
+    productEvidenceForImagePrompt(),
+    "",
+    "真实产品硬性约束：画面里出现的任何实体商品、包装、瓶身、罐身、标签和产品名称，都必须来自上方联网证据或用户输入中真实存在的产品；不得捏造不存在的产品名、包装名、功效名、SKU 或虚构标签。",
     `产品阶段：${report.input.stage}；核心受众：${corePersona.name}；核心卖点/抓手：${report.actionSignal}；可表达的产品机会：${topOpportunities}。`,
-    `画面主题：让用户一眼理解“${report.input.product}”能帮助${corePersona.name}更快获得${report.actionSignal}，并把复杂决策整理成清晰、可执行的结果。`,
-    `品牌标识：画面必须清晰出现自有品牌 Logo/字标“${logoText}”，可以放在产品界面左上角、包装正面、提案封面标题区或品牌铭牌上；Logo 要高级、简洁、可辨认。`,
-    `构图：16:9 横版，中心必须出现能代表该产品的主体界面或产品使用场景，周围用精密的信息层、工作流节点、客户证据和结果看板表达价值；不要只画抽象背景。`,
+    `画面主题：真实呈现“${report.input.product}”的官方真实产品或真实使用场景，让用户一眼理解它对${corePersona.name}的价值。`,
+    `品牌标识：仅允许出现真实存在且与该产品一致的品牌 Logo/字标“${logoText}”；不得伪造官方包装文案。`,
+    `构图：16:9 横版，中心必须出现真实存在的产品主体、官方包装外观或真实可验证的使用场景；不要只画抽象背景，不要添加收益看板、策略报告、营销术语或虚构说明板。`,
     `视觉风格：瑞士式极简、高级咨询公司提案质感、纯净浅色背景、精密排版、柔和自然光、低饱和红色作为唯一强调色。`,
     `商业用途：官网主视觉、客户提案封面、产品发布页配图。`,
-    `信息边界：外部信号模式为${signalModes}，允许出现上述自有品牌标识；不要冒用 Apple、OpenAI、Google、Microsoft 等第三方真实公司 logo，不要出现虚假背书、夸张收益数字或密集文字。`
+    `信息边界：外部信号模式为${signalModes}，允许出现上述真实品牌标识；不要冒用无关第三方真实公司 logo，不要出现虚假背书、夸张收益数字或密集文字。`
   ].filter(Boolean).join("\n");
 }
 
@@ -2137,11 +2140,13 @@ function buildImagePromptRequest() {
     "",
     "提示词要求：",
     "1. 只输出最终提示词，不要解释。",
-    "2. 必须围绕产品本身，不要只描述泛泛的报告、仪表盘或抽象商业场景。",
-    `3. 必须包含产品主体或使用场景、目标用户、核心卖点、构图、材质、光线、色彩、品牌气质、用途，并明确要求画面里出现自有品牌 Logo/字标“${logoText}”。`,
-    "4. 风格要克制、高端、清洁，像专业咨询公司或瑞士高端服务品牌，不要廉价赛博风、不要 emoji、不要密集文字。",
-    "5. 允许且必须出现上面指定的自有品牌标识；禁止冒用第三方真实品牌 logo、真实人物肖像、虚假数据、虚假引用。",
-    "6. 提示词控制在 240-420 个中文字符，可以包含少量英文摄影/设计术语。",
+    "2. 必须围绕真实存在的产品本身，不要只描述泛泛的报告、仪表盘或抽象商业场景。",
+    "3. 画面里任何实体商品、包装、瓶身、罐身、标签、SKU、产品名称，都必须来自联网证据或用户明确输入；不得捏造不存在的产品名、包装名、功效名、标签文字或官方卖点。",
+    "4. 如果联网证据只证明了品牌而没有证明具体 SKU，提示词只能要求“真实官方产品包装/真实官方 SKU”，不能创造新的产品名称。",
+    `5. 必须包含真实产品主体或真实使用场景、目标用户、核心卖点、构图、材质、光线、色彩、品牌气质、用途，并明确要求画面里出现真实且匹配的品牌 Logo/字标“${logoText}”。`,
+    "6. 风格要克制、高端、清洁，像专业咨询公司或瑞士高端服务品牌，不要廉价赛博风、不要 emoji、不要密集文字。",
+    "7. 允许且必须出现上面指定的真实品牌标识；禁止冒用无关第三方真实品牌 logo、真实人物肖像、虚假数据、虚假引用。",
+    "8. 提示词控制在 260-460 个中文字符，可以包含少量英文摄影/设计术语。",
     "",
     "产品营销洞察作为辅助参考：",
     toMarkdown(report),
@@ -2191,20 +2196,21 @@ function setImageStatus(message, type = "idle") {
 function productEvidenceForImagePrompt() {
   const report = buildReport(getFormData());
   const web = state.onlineSignals.web;
-  const items = web.items.slice(0, 5);
+  const items = web.items.slice(0, 8);
   const lines = [
     "联网约束：图片必须先围绕当前产品和全网联索结果生成，不得脱离产品本身自由发挥。",
     `当前产品：${report.input.product}`,
-    `检索词：${web.query || getSignalSearchConfig("web", report.input).keywords || report.input.product}`
+    `检索词：${web.query || getSignalSearchConfig("web", report.input).keywords || report.input.product}`,
+    "真实产品规则：只能画联网证据或用户输入中真实存在的产品、官方包装、官方 SKU 和真实产品名称；不得虚构新包装、新瓶身、新标签、新功效名或不存在的产品线。"
   ];
 
   if (items.length) {
-    lines.push("已检索到的产品/市场信号：");
+    lines.push("已检索到的产品/市场信号，请从这些来源中识别真实存在的产品名称和包装特征：");
     items.forEach((item, index) => {
       lines.push(`${index + 1}. ${item.title} / ${item.source || item.engine || "公开来源"}：${item.snippet || "无摘要"}`);
     });
   } else {
-    lines.push("本次全网联索没有返回可解析结果，图片仍必须严格使用当前产品名、产品上下文、核心人群和卖点，不得生成无关产品或泛化场景。");
+    lines.push("本次全网联索没有返回可解析结果：不得生成带具体包装/标签的实体商品图，只能生成抽象场景、使用场景或无具体 SKU 的概念图，并必须避免伪造产品名称。");
   }
 
   return lines.join("\n");
@@ -2213,13 +2219,18 @@ function productEvidenceForImagePrompt() {
 function constrainImagePromptToProduct(prompt) {
   const report = buildReport(getFormData());
   const logoText = clean($("#imageLogoInput")?.value || "") || report.input.product;
+  const web = state.onlineSignals.web;
+  const evidenceSummary = web.items.slice(0, 8).map((item, index) => `${index + 1}. ${item.title} ${item.snippet || ""}`).join("\n");
   return [
     productEvidenceForImagePrompt(),
     "",
     "最终生图硬性要求：",
     `1. 画面主体必须明确服务于“${report.input.product}”，不能换成其他产品、行业或抽象 AI 场景。`,
-    `2. 画面必须出现自有品牌 Logo/字标“${logoText}”；不得出现第三方真实品牌 Logo。`,
-    "3. 如果联网结果不足，只能依据当前产品输入和本地报告，不得编造真实新闻、真实数据或虚假背书。",
+    `2. 画面必须出现真实且匹配该产品的品牌 Logo/字标“${logoText}”；不得出现无关第三方真实品牌 Logo。`,
+    "3. 所有实体产品包装、标签文字、瓶身/罐身名称、SKU 名称必须真实存在，并能从联网证据或用户输入中找到依据；不得生成不存在的产品包装。",
+    "4. 如果证据不足以确认具体 SKU，不要画带具体产品名的包装，只能画真实品牌氛围、使用场景或无标签概念容器。",
+    "5. 严禁出现营销报告语言、收益看板、策略看板、虚构功效说明、虚构步骤图、虚构官方宣称。",
+    evidenceSummary ? `联网证据摘要：\n${evidenceSummary}` : "联网证据摘要：无可用真实来源。",
     "",
     "原始/AI 生成提示词：",
     prompt
@@ -2232,10 +2243,22 @@ async function ensureWebEvidenceForImage(options = {}) {
   state.report = latestReport;
   renderReport(latestReport);
 
-  setImageStatus("正在先进行全网联索，确认当前产品信息后再生成图片", "loading");
+  const previousWebEnabled = $("#webSearchInput")?.checked;
+  const previousKeywords = $("#searchKeywordsInput")?.value || "";
+  if ($("#webSearchInput")) $("#webSearchInput").checked = true;
+  if ($("#searchKeywordsInput")) {
+    const product = clean($("#productInput").value);
+    const extraTerms = ["官方", "真实产品", "产品包装", "产品图", "正品"].join(" ");
+    $("#searchKeywordsInput").value = [product, extraTerms, previousKeywords].filter(Boolean).join(" ");
+  }
+  updateExternalSignalPanels();
+  setImageStatus("正在先进行全网联索，确认真实产品与官方包装信息后再生成图片", "loading");
   const items = await searchOnlineSignals("web", { force });
   const count = Array.isArray(items) ? items.length : 0;
-  setImageStatus(count ? `全网联索完成，已获得 ${count} 条产品相关信号，正在生成图片提示词` : "全网联索未返回可解析结果，将严格依据当前产品信息生成图片", count ? "success" : "error");
+  if ($("#searchKeywordsInput")) $("#searchKeywordsInput").value = previousKeywords;
+  if (!previousWebEnabled && $("#webSearchInput")) $("#webSearchInput").checked = previousWebEnabled;
+  updateExternalSignalPanels();
+  setImageStatus(count ? `全网联索完成，已获得 ${count} 条产品相关信号，正在识别真实产品包装` : "全网联索未返回可解析结果，已禁止生成带虚构包装的实体产品图", count ? "success" : "error");
   return items;
 }
 
@@ -2259,7 +2282,11 @@ async function generateImagePrompt(options = {}) {
   renderReport(latestReport);
 
   if (!skipSearch) {
-    await ensureWebEvidenceForImage({ force: true });
+    const evidence = await ensureWebEvidenceForImage({ force: true });
+    if (!evidence.length) {
+      setImageStatus("没有检索到可验证的真实产品来源，已停止生成产品图，避免捏造不存在的包装。请补充更准确的产品名或官方链接后重试。", "error");
+      return "";
+    }
   }
 
   if (!state.apiConfigReady) {
@@ -2552,7 +2579,11 @@ async function requestImageGeneration(prompt, config, signal) {
 async function generateImageFromPrompt(options = {}) {
   const skipSearch = Boolean(options.skipSearch);
   if (!skipSearch) {
-    await ensureWebEvidenceForImage({ force: true });
+    const evidence = await ensureWebEvidenceForImage({ force: true });
+    if (!evidence.length) {
+      setImageStatus("没有检索到可验证的真实产品来源，已停止生图，避免生成不存在的产品包装。请补充官方产品名、产品链接或更准确关键词后重试。", "error");
+      return [];
+    }
   }
   const prompt = clean(options.prompt || $("#imagePromptInput").value);
   const config = { ...getImageConfig(), ...(options.config || {}) };
@@ -2632,7 +2663,10 @@ async function generateMultiImagesOneClick() {
   setImageBatchGenerating(true);
   setImageStatus("正在先进行全网联索，确认当前产品信息后再生成多图", "loading");
   try {
-    await ensureWebEvidenceForImage({ force: true });
+    const evidence = await ensureWebEvidenceForImage({ force: true });
+    if (!evidence.length) {
+      throw new Error("没有检索到可验证的真实产品来源，已停止生图，避免生成不存在的产品包装。");
+    }
     const prompt = await generateImagePrompt({ silent: true, skipSearch: true });
     if (!prompt) throw new Error("没有生成可用提示词");
     setImageStatus(`提示词已就绪，正在生成 ${targetCount} 张候选图`, "loading");
