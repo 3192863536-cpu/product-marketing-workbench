@@ -337,8 +337,6 @@ svg {
     url("assets/auth-pink-portrait-bg.jpg") 86% 40% / auto 112% no-repeat;
   filter: saturate(1.1) contrast(1.17) brightness(0.78);
   transform: scale(1.045) translate3d(0, 0, 0);
-  animation: authCameraDrift 30s var(--ease) infinite alternate;
-  will-change: transform, filter;
 }
 
 .auth-screen::after {
@@ -352,7 +350,6 @@ svg {
   mix-blend-mode: screen;
   opacity: 0.42;
   transform: translate3d(-3%, 0, 0);
-  animation: authLightPass 22s var(--ease) infinite alternate;
 }
 
 .auth-brand-panel {
@@ -390,7 +387,6 @@ svg {
   -webkit-mask-image: linear-gradient(90deg, transparent 0 34%, black 55% 100%);
   pointer-events: none;
   transform: scale(1.03);
-  animation: authPanelPortraitDrift 34s var(--ease) infinite alternate;
 }
 
 .auth-brand-panel::after {
@@ -1174,44 +1170,6 @@ body:not(.authenticated) .admin-shell {
   }
   to {
     background-position: -100% 0;
-  }
-}
-
-@keyframes authCameraDrift {
-  from {
-    background-position: 84% 40%;
-    transform: scale(1.045) translate3d(-0.6%, -0.2%, 0);
-    filter: saturate(1.04) contrast(1.12) brightness(0.78);
-  }
-
-  to {
-    background-position: 90% 41%;
-    transform: scale(1.085) translate3d(0.9%, 0.3%, 0);
-    filter: saturate(1.12) contrast(1.18) brightness(0.84);
-  }
-}
-
-@keyframes authPanelPortraitDrift {
-  from {
-    background-position: 64% 39%;
-    transform: scale(1.03) translate3d(-0.4%, 0, 0);
-  }
-
-  to {
-    background-position: 70% 40%;
-    transform: scale(1.07) translate3d(0.6%, -0.2%, 0);
-  }
-}
-
-@keyframes authLightPass {
-  from {
-    opacity: 0.34;
-    transform: translate3d(-5%, 0, 0);
-  }
-
-  to {
-    opacity: 0.46;
-    transform: translate3d(5%, 0, 0);
   }
 }
 
