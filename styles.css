@@ -330,12 +330,12 @@ svg {
 
 .auth-screen::before {
   background:
-    linear-gradient(90deg, oklch(0.99 0.006 120 / 0.92) 0%, oklch(0.98 0.012 355 / 0.42) 42%, oklch(0.12 0.018 155 / 0.58) 100%),
-    radial-gradient(circle at 75% 36%, oklch(0.74 0.18 355 / 0.3), transparent 24rem),
-    radial-gradient(circle at 84% 70%, oklch(0.36 0.095 160 / 0.24), transparent 28rem),
-    linear-gradient(180deg, oklch(1 0 0 / 0.36), oklch(0.18 0.022 155 / 0.5)),
+    linear-gradient(90deg, oklch(0.98 0.008 120 / 0.62) 0%, oklch(0.92 0.018 355 / 0.28) 42%, oklch(0.1 0.02 155 / 0.72) 100%),
+    radial-gradient(circle at 75% 36%, oklch(0.68 0.18 355 / 0.2), transparent 24rem),
+    radial-gradient(circle at 84% 70%, oklch(0.28 0.08 160 / 0.34), transparent 28rem),
+    linear-gradient(180deg, oklch(0.96 0.004 120 / 0.18), oklch(0.11 0.018 155 / 0.68)),
     url("assets/auth-pink-portrait-bg.jpg") 86% 40% / auto 112% no-repeat;
-  filter: saturate(0.98) contrast(1.08) brightness(0.95);
+  filter: saturate(1.1) contrast(1.17) brightness(0.78);
   transform: scale(1.045) translate3d(0, 0, 0);
   animation: authCameraDrift 30s var(--ease) infinite alternate;
   will-change: transform, filter;
@@ -344,13 +344,13 @@ svg {
 .auth-screen::after {
   z-index: -1;
   background:
-    radial-gradient(circle at 76% 22%, oklch(1 0 0 / 0.36), transparent 16rem),
-    radial-gradient(circle at 18% 18%, oklch(1 0 0 / 0.5), transparent 24rem),
-    radial-gradient(circle at 78% 64%, oklch(0.37 0.105 160 / 0.28), transparent 28rem),
-    linear-gradient(104deg, transparent 0 36%, oklch(1 0 0 / 0.28) 46%, transparent 56%),
-    repeating-linear-gradient(90deg, oklch(0.2 0.02 150 / 0.03) 0 1px, transparent 1px 96px);
+    radial-gradient(circle at 76% 22%, oklch(1 0 0 / 0.16), transparent 16rem),
+    radial-gradient(circle at 18% 18%, oklch(1 0 0 / 0.26), transparent 24rem),
+    radial-gradient(circle at 78% 64%, oklch(0.27 0.09 160 / 0.32), transparent 28rem),
+    linear-gradient(104deg, transparent 0 36%, oklch(1 0 0 / 0.12) 46%, transparent 56%),
+    repeating-linear-gradient(90deg, oklch(0.12 0.016 150 / 0.05) 0 1px, transparent 1px 96px);
   mix-blend-mode: screen;
-  opacity: 0.78;
+  opacity: 0.42;
   transform: translate3d(-3%, 0, 0);
   animation: authLightPass 22s var(--ease) infinite alternate;
 }
@@ -367,8 +367,8 @@ svg {
   border-radius: 24px;
   padding: clamp(28px, 4vw, 58px);
   background:
-    linear-gradient(142deg, oklch(1 0 0 / 0.72), oklch(0.98 0.014 355 / 0.38) 52%, oklch(0.29 0.06 155 / 0.1)),
-    linear-gradient(67deg, transparent 0 42%, oklch(1 0 0 / 0.28) 42.08% 42.2%, transparent 42.32%);
+    linear-gradient(142deg, oklch(0.99 0.004 120 / 0.5), oklch(0.94 0.018 355 / 0.24) 52%, oklch(0.14 0.036 155 / 0.26)),
+    linear-gradient(67deg, transparent 0 42%, oklch(1 0 0 / 0.12) 42.08% 42.2%, transparent 42.32%);
   box-shadow:
     0 34px 100px oklch(0.15 0.035 155 / 0.18),
     inset 0 1px 0 oklch(1 0 0 / 0.72);
@@ -381,11 +381,11 @@ svg {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, oklch(1 0 0 / 0.94) 0%, oklch(1 0 0 / 0.68) 42%, oklch(1 0 0 / 0.06) 76%),
-    radial-gradient(circle at 78% 32%, oklch(0.72 0.18 355 / 0.16), transparent 18rem),
+    linear-gradient(90deg, oklch(1 0 0 / 0.66) 0%, oklch(1 0 0 / 0.32) 42%, oklch(0.1 0.018 155 / 0.12) 76%),
+    radial-gradient(circle at 78% 32%, oklch(0.64 0.18 355 / 0.1), transparent 18rem),
     url("assets/auth-pink-portrait-bg.jpg") 70% 39% / auto 116% no-repeat;
-  opacity: 0.28;
-  filter: saturate(0.86) contrast(0.92) brightness(1.08);
+  opacity: 0.56;
+  filter: saturate(1.08) contrast(1.08) brightness(0.82);
   mask-image: linear-gradient(90deg, transparent 0 34%, black 55% 100%);
   -webkit-mask-image: linear-gradient(90deg, transparent 0 34%, black 55% 100%);
   pointer-events: none;
@@ -1203,13 +1203,13 @@ body:not(.authenticated) .admin-shell {
   from {
     background-position: 84% 40%;
     transform: scale(1.045) translate3d(-0.6%, -0.2%, 0);
-    filter: saturate(0.94) contrast(1.06) brightness(0.92);
+    filter: saturate(1.04) contrast(1.12) brightness(0.78);
   }
 
   to {
     background-position: 90% 41%;
     transform: scale(1.085) translate3d(0.9%, 0.3%, 0);
-    filter: saturate(1.02) contrast(1.12) brightness(0.98);
+    filter: saturate(1.12) contrast(1.18) brightness(0.84);
   }
 }
 
@@ -1227,12 +1227,12 @@ body:not(.authenticated) .admin-shell {
 
 @keyframes authLightPass {
   from {
-    opacity: 0.58;
+    opacity: 0.34;
     transform: translate3d(-5%, 0, 0);
   }
 
   to {
-    opacity: 0.82;
+    opacity: 0.46;
     transform: translate3d(5%, 0, 0);
   }
 }
@@ -3676,20 +3676,20 @@ dd {
 
   .auth-screen::before {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 0.5), oklch(0.12 0.018 155 / 0.68)),
-      radial-gradient(circle at 50% 18%, oklch(0.74 0.18 355 / 0.24), transparent 17rem),
+      linear-gradient(180deg, oklch(0.96 0.004 120 / 0.28), oklch(0.1 0.018 155 / 0.76)),
+      radial-gradient(circle at 50% 18%, oklch(0.7 0.18 355 / 0.16), transparent 17rem),
       url("assets/auth-pink-portrait-bg.jpg") 56% 20% / auto 118% no-repeat;
-    filter: saturate(0.96) contrast(1.08) brightness(0.92);
+    filter: saturate(1.08) contrast(1.14) brightness(0.82);
   }
 
   .auth-screen::after {
-    opacity: 0.62;
+    opacity: 0.46;
     background:
-      radial-gradient(circle at 50% 14%, oklch(1 0 0 / 0.28), transparent 16rem),
-      radial-gradient(circle at 36% 28%, oklch(0.74 0.18 355 / 0.24), transparent 18rem),
-      radial-gradient(circle at 70% 58%, oklch(0.36 0.1 160 / 0.22), transparent 18rem),
-      linear-gradient(180deg, oklch(1 0 0 / 0.08), oklch(0.1 0.014 155 / 0.48)),
-      repeating-linear-gradient(90deg, oklch(0.18 0.02 155 / 0.03) 0 1px, transparent 1px 74px);
+      radial-gradient(circle at 50% 14%, oklch(1 0 0 / 0.14), transparent 16rem),
+      radial-gradient(circle at 36% 28%, oklch(0.7 0.18 355 / 0.14), transparent 18rem),
+      radial-gradient(circle at 70% 58%, oklch(0.25 0.08 160 / 0.3), transparent 18rem),
+      linear-gradient(180deg, oklch(1 0 0 / 0.04), oklch(0.08 0.014 155 / 0.58)),
+      repeating-linear-gradient(90deg, oklch(0.12 0.016 155 / 0.05) 0 1px, transparent 1px 74px);
   }
 
   .auth-brand-panel {
