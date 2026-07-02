@@ -113,7 +113,7 @@
       <nav class="site-nav" aria-label="平台导航">
         <a class="active" href="#top" data-nav-view="home">首页</a>
         <a href="#workbench" data-nav-view="workbench">营销智投</a>
-        <a href="#workbench" data-nav-view="history">历史报告</a>
+        <a href="#historyPage" data-nav-view="history">历史报告</a>
       </nav>
       <div class="site-actions">
         <span class="site-phone">
@@ -394,22 +394,6 @@
             </button>
           </div>
         </form>
-
-        <section class="history-panel" aria-label="历史记录">
-          <div class="config-heading">
-            <div>
-              <span>历史记录</span>
-              <p>自动保存最近生成的营销洞察报告。</p>
-            </div>
-            <button id="clearHistoryBtn" type="button">清空</button>
-          </div>
-          <div class="history-list" id="historyList">
-            <article class="history-empty">
-              <span>暂无记录</span>
-              <p>生成报告后会保存在本机浏览器中。</p>
-            </article>
-          </div>
-        </section>
 
         <footer class="input-footer">
           <span>Marketing-ready output</span>
@@ -833,6 +817,40 @@
         </div>
         <p class="signal-related-note">通过搜索引擎限定社区平台域名采集真实讨论线索。结果以来源链接为准，不把本地推测写成舆情事实。</p>
         <div class="signal-intel-feed" id="communityInsights"></div>
+      </section>
+    </section>
+
+    <section class="history-page" id="historyPage" aria-label="历史报告页面" hidden>
+      <header class="history-page-hero">
+        <div>
+          <span>REPORT ARCHIVE</span>
+          <h1>历史报告</h1>
+          <p>集中管理最近生成的营销洞察报告，快速恢复报告、复盘分析侧重和外部信号模式。</p>
+        </div>
+        <div class="history-page-actions">
+          <button class="signal-return" type="button" data-return-view="workbench">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M19 12H5M11 6l-6 6 6 6" />
+            </svg>
+            <span>返回工作台</span>
+          </button>
+          <button id="clearHistoryBtn" type="button">清空记录</button>
+        </div>
+      </header>
+
+      <section class="history-panel history-panel-large" aria-label="历史记录">
+        <div class="config-heading">
+          <div>
+            <span>报告资产</span>
+            <p>自动保存最近生成的营销洞察报告。点击记录可恢复报告内容，删除按钮只移除单条记录。</p>
+          </div>
+        </div>
+        <div class="history-list" id="historyList">
+          <article class="history-empty">
+            <span>暂无记录</span>
+            <p>生成报告后会保存在本机浏览器中。</p>
+          </article>
+        </div>
       </section>
     </section>
 

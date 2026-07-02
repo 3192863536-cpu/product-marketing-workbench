@@ -2988,6 +2988,7 @@ function restoreHistoryItem(id) {
     renderAiReport("empty", "这条历史记录只有本地结构化洞察，没有保存 AI 深度报告。");
   }
   setActiveSection(state.aiMarkdown ? "ai" : "personas");
+  showWorkbenchView("workbench");
   showToast("已恢复历史报告");
 }
 
@@ -3012,13 +3013,15 @@ function showWorkbenchView(view = "home") {
   const showingAdmin = view === "admin";
   const showingWebIntel = view === "web-intel";
   const showingCommunity = view === "community";
+  const showingHistory = view === "history";
   const showingSignalPage = showingWebIntel || showingCommunity;
   const adminPanel = $("#adminPanel");
   if (adminPanel) adminPanel.hidden = !showingAdmin;
   $("#webIntelPage").hidden = !showingWebIntel;
   $("#communityPage").hidden = !showingCommunity;
-  $(".platform-hero").hidden = showingAdmin || showingSignalPage;
-  $("#workbench").hidden = showingAdmin || showingSignalPage;
+  $("#historyPage").hidden = !showingHistory;
+  $(".platform-hero").hidden = showingAdmin || showingSignalPage || showingHistory;
+  $("#workbench").hidden = showingAdmin || showingSignalPage || showingHistory;
   $$("[data-nav-view]").forEach((link) => {
     const navView = link.dataset.navView;
     const active = showingAdmin ? false : navView === view || (view === "home" && navView === "home");
@@ -3036,8 +3039,8 @@ function showWorkbenchView(view = "home") {
     searchOnlineSignals("community");
     $("#communityPage").scrollIntoView({ block: "start" });
   } else if (view === "history") {
-    $("#workbench").scrollIntoView({ block: "start" });
-    $(".history-panel")?.scrollIntoView({ block: "center" });
+    renderHistory();
+    $("#historyPage").scrollIntoView({ block: "start" });
   } else if (view === "workbench") {
     $("#workbench").scrollIntoView({ block: "start" });
   } else {
