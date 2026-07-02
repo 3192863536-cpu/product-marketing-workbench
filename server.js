@@ -11,6 +11,7 @@ const port = Number(process.env.PORT || 5174);
 const host = process.env.HOST || "127.0.0.1";
 const searchTimeoutMs = 18000;
 const sessionCookieName = "pmw_session";
+const authChallengeCookieName = "pmw_auth_challenge";
 const trendRadarApiUrl = process.env.TRENDRADAR_NEWSNOW_API_URL || "https://newsnow.busiyi.world/api/s";
 const defaultImageApiUrl = process.env.DEFAULT_IMAGE_API_URL || "https://image-api.kaopuapi.xyz/v1/images/generations";
 
@@ -65,6 +66,7 @@ const platformParamsToRemove = {
 };
 
 let appData = null;
+const authChallenges = new Map();
 
 function emptyData() {
   return {
@@ -158,6 +160,44 @@ function verifyPassword(password, stored) {
   return expectedBuffer.length === actual.length && crypto.timingSafeEqual(actual, expectedBuffer);
 }
 
+function pruneAuthChallenges() {
+  const now = Date.now();
+  for (const [id, challenge] of authChallenges.entries()) {
+    if (!challenge || challenge.expiresAt <= now) authChallenges.delete(id);
+  }
+}
+
+function createAuthChallenge() {
+  pruneAuthChallenges();
+  const a = crypto.randomInt(3, 18);
+  const b = crypto.randomInt(2, 12);
+  const useSubtraction = a > b && crypto.randomInt(0, 2) === 1;
+  const answer = useSubtraction ? a - b : a + b;
+  const id = crypto.randomBytes(18).toString("hex");
+  authChallenges.set(id, {
+    answer: String(answer),
+    expiresAt: Date.now() + 1000 * 60 * 5
+  });
+  return {
+    id,
+    question: useSubtraction ? `${a} - ${b} = ?` : `${a} + ${b} = ?`
+  };
+}
+
+function verifyAuthChallenge(request, body) {
+  pruneAuthChallenges();
+  const cookies = parseCookies(request);
+  const id = clean(body.challengeId || cookies[authChallengeCookieName] || "");
+  const answer = clean(body.challengeAnswer || "");
+  const challenge = id ? authChallenges.get(id) : null;
+  if (!challenge) return { ok: false, error: "验证码已过期，请刷新后重试" };
+  authChallenges.delete(id);
+  if (!answer || answer !== challenge.answer) {
+    return { ok: false, error: "验证码不正确，请重新输入" };
+  }
+  return { ok: true };
+}
+
 async function readJsonBody(request, limit = 1_000_000) {
   const chunks = [];
   let size = 0;
@@ -223,6 +263,18 @@ function sendJsonWithHeaders(response, status, payload, headers = {}) {
 
 async function handleAuth(request, response, requestUrl) {
   const pathname = requestUrl.pathname;
+  if (pathname === "/api/auth/challenge" && request.method === "GET") {
+    const challenge = createAuthChallenge();
+    sendJsonWithHeaders(response, 200, {
+      ok: true,
+      challengeId: challenge.id,
+      question: challenge.question
+    }, {
+      "Set-Cookie": cookieHeader(authChallengeCookieName, challenge.id, { maxAge: 60 * 5 })
+    });
+    return true;
+  }
+
   if (pathname === "/api/auth/me" && request.method === "GET") {
     const { data, user } = await currentSession(request);
     sendJson(response, 200, {
@@ -242,6 +294,11 @@ async function handleAuth(request, response, requestUrl) {
     const password = String(body.password || "");
     if (!name || !email || password.length < 6) {
       sendJson(response, 400, { ok: false, error: "请填写姓名、邮箱和至少 6 位密码" });
+      return true;
+    }
+    const challenge = verifyAuthChallenge(request, body);
+    if (!challenge.ok) {
+      sendJson(response, 400, { ok: false, error: challenge.error });
       return true;
     }
     if (data.users.some((user) => user.email === email)) {
@@ -282,6 +339,11 @@ async function handleAuth(request, response, requestUrl) {
     const body = await readJsonBody(request);
     const email = clean(body.email || "").toLowerCase();
     const password = String(body.password || "");
+    const challenge = verifyAuthChallenge(request, body);
+    if (!challenge.ok) {
+      sendJson(response, 400, { ok: false, error: challenge.error });
+      return true;
+    }
     const user = data.users.find((item) => item.email === email);
     if (!user || !verifyPassword(password, user.passwordHash)) {
       sendJson(response, 401, { ok: false, error: "邮箱或密码不正确" });

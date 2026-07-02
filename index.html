@@ -51,6 +51,18 @@
             <span>密码</span>
             <input id="loginPasswordInput" type="password" placeholder="请输入密码" autocomplete="current-password" required />
           </label>
+          <label class="field compact-field auth-verify-field">
+            <span>安全验证</span>
+            <div class="auth-verify-row">
+              <strong id="loginVerifyQuestion">加载中</strong>
+              <button type="button" id="refreshLoginVerifyBtn" aria-label="刷新登录验证码">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6" />
+                </svg>
+              </button>
+            </div>
+            <input id="loginVerifyInput" type="text" inputmode="numeric" placeholder="请输入计算结果" autocomplete="off" required />
+          </label>
           <button class="auth-submit" type="submit">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 12h12M12 6l6 6-6 6" />
@@ -75,6 +87,18 @@
           <label class="field compact-field">
             <span>密码</span>
             <input id="registerPasswordInput" type="password" placeholder="至少 6 位" autocomplete="new-password" minlength="6" required />
+          </label>
+          <label class="field compact-field auth-verify-field">
+            <span>安全验证</span>
+            <div class="auth-verify-row">
+              <strong id="registerVerifyQuestion">加载中</strong>
+              <button type="button" id="refreshRegisterVerifyBtn" aria-label="刷新注册验证码">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6" />
+                </svg>
+              </button>
+            </div>
+            <input id="registerVerifyInput" type="text" inputmode="numeric" placeholder="请输入计算结果" autocomplete="off" required />
           </label>
           <button class="auth-submit" type="submit">
             <svg viewBox="0 0 24 24" aria-hidden="true">

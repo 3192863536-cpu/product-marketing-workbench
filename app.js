@@ -56,6 +56,10 @@ const state = {
   users: [],
   currentUser: null,
   currentView: "home",
+  authChallenge: {
+    login: null,
+    register: null
+  },
   serverConfig: {
     url: "",
     model: "",
@@ -202,6 +206,37 @@ function setAuthMode(mode) {
   $("#registerForm").classList.toggle("active", !isLogin);
   $("#loginTabBtn").classList.toggle("active", isLogin);
   $("#registerTabBtn").classList.toggle("active", !isLogin);
+  ensureAuthChallenge(isLogin ? "login" : "register");
+}
+
+function authChallengeElements(mode) {
+  return {
+    question: $(`#${mode}VerifyQuestion`),
+    input: $(`#${mode}VerifyInput`),
+    refresh: $(`#refresh${mode === "login" ? "Login" : "Register"}VerifyBtn`)
+  };
+}
+
+async function loadAuthChallenge(mode) {
+  const elements = authChallengeElements(mode);
+  if (elements.question) elements.question.textContent = "生成中...";
+  if (elements.input) elements.input.value = "";
+  try {
+    const payload = await apiJson(`/api/auth/challenge?mode=${mode}&t=${Date.now()}`);
+    state.authChallenge[mode] = {
+      id: payload.challengeId,
+      question: payload.question
+    };
+    if (elements.question) elements.question.textContent = payload.question || "请刷新验证码";
+  } catch {
+    state.authChallenge[mode] = null;
+    if (elements.question) elements.question.textContent = "验证码加载失败";
+  }
+}
+
+function ensureAuthChallenge(mode) {
+  if (state.currentUser) return;
+  if (!state.authChallenge[mode]) loadAuthChallenge(mode);
 }
 
 function updateAuthUi() {
@@ -230,21 +265,28 @@ async function handleRegister(event) {
   const name = clean($("#registerNameInput").value);
   const email = normalizeEmail($("#registerEmailInput").value);
   const password = $("#registerPasswordInput").value.trim();
+  const challengeAnswer = clean($("#registerVerifyInput").value);
+  const challengeId = state.authChallenge.register?.id || "";
 
   if (!name || !email || password.length < 6) {
     showToast("请填写姓名、邮箱和至少 6 位密码");
     return;
   }
+  if (!challengeAnswer) {
+    showToast("请完成安全验证");
+    return;
+  }
   try {
     const payload = await apiJson("/api/auth/register", {
       method: "POST",
-      body: { name, email, password }
+      body: { name, email, password, challengeId, challengeAnswer }
     });
     applyServerSession(payload);
     showWorkbenchView("home");
     showToast(payload.user?.role === "admin" ? "注册成功，已成为管理员" : "注册成功");
   } catch (error) {
     showToast(error.message.slice(0, 60));
+    await loadAuthChallenge("register");
     if (error.message.includes("已经注册")) {
       setAuthMode("login");
       $("#loginEmailInput").value = email;
@@ -256,16 +298,23 @@ async function handleLogin(event) {
   event.preventDefault();
   const email = normalizeEmail($("#loginEmailInput").value);
   const password = $("#loginPasswordInput").value.trim();
+  const challengeAnswer = clean($("#loginVerifyInput").value);
+  const challengeId = state.authChallenge.login?.id || "";
+  if (!challengeAnswer) {
+    showToast("请完成安全验证");
+    return;
+  }
   try {
     const payload = await apiJson("/api/auth/login", {
       method: "POST",
-      body: { email, password }
+      body: { email, password, challengeId, challengeAnswer }
     });
     applyServerSession(payload);
     showWorkbenchView("home");
     showToast("登录成功");
   } catch (error) {
     showToast(error.message.slice(0, 60));
+    await loadAuthChallenge("login");
   }
 }
 
@@ -3142,8 +3191,11 @@ async function init() {
   $$("[data-auth-mode]").forEach((button) => {
     button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
   });
+  $("#refreshLoginVerifyBtn").addEventListener("click", () => loadAuthChallenge("login"));
+  $("#refreshRegisterVerifyBtn").addEventListener("click", () => loadAuthChallenge("register"));
   $("#registerForm").addEventListener("submit", handleRegister);
   $("#loginForm").addEventListener("submit", handleLogin);
+  ensureAuthChallenge("login");
   $("#logoutBtn").addEventListener("click", logout);
   $("#openAdminBtn").addEventListener("click", showAdminView);
   $("#returnWorkbenchBtn").addEventListener("click", () => showWorkbenchView("workbench"));
