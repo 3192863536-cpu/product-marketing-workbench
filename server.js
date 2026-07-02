@@ -671,6 +671,41 @@ function splitSearchTerms(value, fallback = []) {
   return terms.length ? terms : fallback;
 }
 
+function normalizeSearchText(value = "") {
+  return clean(value).toLowerCase().replace(/\s+/g, "");
+}
+
+function productEntityTokens(product) {
+  const name = clean(product);
+  if (!name) return [];
+  const tokens = [name, normalizeSearchText(name)];
+  const compact = name.replace(/[\s·・.。_-]+/g, "");
+  if (compact && compact !== name) tokens.push(compact);
+  return unique(tokens).filter((token) => token.length >= 2);
+}
+
+function productEntityMatchScore(item, product) {
+  const tokens = productEntityTokens(product);
+  if (!tokens.length) return 1;
+  const haystack = normalizeSearchText(`${item.title || ""} ${item.snippet || ""} ${item.url || ""} ${item.source || ""}`);
+  let score = 0;
+  tokens.forEach((token) => {
+    const normalized = normalizeSearchText(token);
+    if (normalized && haystack.includes(normalized)) score += normalized.length >= 4 ? 2 : 1;
+  });
+  return score;
+}
+
+function filterByProductEntity(results, product, limit = 12) {
+  const tokens = productEntityTokens(product);
+  if (!tokens.length) return results;
+  const scored = results
+    .map((item) => ({ item, score: productEntityMatchScore(item, product) }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map(({ item }) => item);
+}
+
 function unique(values) {
   return [...new Set(values.map(clean).filter(Boolean))];
 }
@@ -698,7 +733,7 @@ function buildProductBase(params) {
   const actionSignal = clean(params.actionSignal || "");
   const coreUser = clean(params.coreUser || "");
   const opportunities = splitTerms(params.opportunities || "", []);
-  const queryTerms = splitSearchTerms(params.query || "", []);
+  const queryTerms = splitSearchTerms(params.query || "", []).filter((term) => !productEntityTokens(product).includes(term));
   const contextTerms = splitSearchTerms(params.context || "", []).slice(0, 3);
   return {
     product,
@@ -715,6 +750,7 @@ function buildProductBase(params) {
 function buildQueries(type, params) {
   const data = buildProductBase(params);
   const base = compactQuery(data.baseTerms.join(" "), 110);
+  const productIntent = compactQuery(`${data.product} 产品 品牌 官网 官方 价格 评测`, 118);
   if (type === "community") {
     const platforms = splitTerms(params.sources, ["知乎", "小红书", "微博", "B站", "Reddit"]).slice(0, 5);
     return platforms.flatMap((platform) => {
@@ -722,12 +758,12 @@ function buildQueries(type, params) {
       const prefix = domain ? `site:${domain}` : platform;
       return [
         {
-          query: compactQuery(`${prefix} ${data.product} ${data.actionSignal} 用户 评价 讨论 吐槽`, 118),
+          query: compactQuery(`${prefix} ${data.product} 用户 评价 讨论 吐槽 购买体验`, 118),
           platform,
           domain
         },
         {
-          query: compactQuery(`${prefix} ${base} 替代方案 推荐 避坑 体验`, 118),
+          query: compactQuery(`${prefix} ${data.product} 替代方案 推荐 避坑 复购`, 118),
           platform,
           domain
         }
@@ -736,17 +772,17 @@ function buildQueries(type, params) {
   }
   return [
     {
-      query: compactQuery(`${data.product} ${data.category} ${data.actionSignal} 市场 竞品 价格 评价`, 118),
+      query: productIntent,
       platform: "全网",
       domain: ""
     },
     {
-      query: compactQuery(`${data.product} ${data.coreUser} ${data.opportunities[0] || data.actionSignal} 替代方案 对比 案例`, 118),
+      query: compactQuery(`${data.product} ${data.category} 市场 竞品 对比 案例`, 118),
       platform: "全网",
       domain: ""
     },
     {
-      query: compactQuery(`${base} 购买决策 痛点 复购 转化`, 118),
+      query: compactQuery(`${data.product} ${data.opportunities[0] || data.actionSignal || "购买决策"} 评价 口碑 渠道`, 118),
       platform: "全网",
       domain: ""
     }
@@ -764,7 +800,7 @@ function tokensFromSearchParams(params) {
     ...data.queryTerms,
     ...data.contextTerms
   ], data.product)
-    .flatMap((term) => splitSearchTerms(term, [term]))
+    .flatMap((term) => (term === data.product ? productEntityTokens(term) : splitSearchTerms(term, [term])))
     .filter((term) => term.length >= 2 && !["ai", "api"].includes(term.toLowerCase()))
     .slice(0, 18);
 }
@@ -924,7 +960,8 @@ async function runSearch(requestUrl) {
     ...trendRadarSearch.flatMap((result) => (result.status === "fulfilled" ? result.value : [])),
     ...searches.flatMap((result) => (result.status === "fulfilled" ? result.value : []))
   ];
-  const items = dedupeResults(results, limit);
+  const productFiltered = filterByProductEntity(results, product, limit * 3);
+  const items = dedupeResults(productFiltered, limit);
   return {
     ok: true,
     type,
@@ -938,7 +975,7 @@ async function runSearch(requestUrl) {
     sources,
     searchedAt: new Date().toISOString(),
     items,
-    warning: items.length ? "" : errors[0] || trendRadarErrors[0] || "搜索源未返回可解析结果"
+    warning: items.length ? "" : errors[0] || trendRadarErrors[0] || "搜索源未返回与当前产品实体相关的可解析结果"
   };
 }
 

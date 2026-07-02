@@ -375,6 +375,12 @@ function splitSignalTerms(value, fallback) {
   return terms.length ? terms.slice(0, 6) : fallback;
 }
 
+function buildProductEntityPhrase(product) {
+  const name = clean(product);
+  if (!name) return "";
+  return `${name} 产品 品牌 官网 官方 价格 评测`;
+}
+
 function compactContextTerms(value, limit = 5) {
   const stopWords = new Set(["提供", "包括", "当前", "希望", "提升", "用户", "产品", "平台", "系统", "服务", "功能", "以及", "可以", "进行"]);
   const matches = String(value || "").match(/[\u4e00-\u9fa5A-Za-z0-9]{2,18}/g) || [];
@@ -392,17 +398,17 @@ function buildProductSearchPhrase(input, report, profile, kind) {
   const contextTerms = compactContextTerms(input.context, 5);
   const corePersona = report.personas.find((item) => item.core) || report.personas[0];
   const opportunityTerms = report.opportunities.slice(0, 2).map((item) => item.name);
+  const productEntityPhrase = buildProductEntityPhrase(input.product);
   const productTerms = [
-    input.product,
+    productEntityPhrase || input.product,
     profile.category,
-    report.actionSignal,
-    corePersona?.name,
-    ...opportunityTerms,
+    kind === "community" ? "真实评价 用户讨论 购买体验" : "市场 竞品 案例 渠道",
+    userKeywords.length ? userKeywords.join(" ") : "",
     ...contextTerms,
-    ...userKeywords
+    ...(kind === "community" ? [corePersona?.name, report.actionSignal] : opportunityTerms.slice(0, 1))
   ].filter(Boolean);
 
-  const uniqueTerms = [...new Set(productTerms)].slice(0, kind === "community" ? 8 : 10);
+  const uniqueTerms = [...new Set(productTerms)].slice(0, kind === "community" ? 7 : 8);
   return uniqueTerms.join(" ");
 }
 
@@ -466,7 +472,7 @@ function renderSearchBasisHtml(kind, signal, config) {
         <strong>${escapeHtml(status)}</strong>
       </div>
       <h3>${escapeHtml(config.product)}</h3>
-      <p>本次${escapeHtml(label)}以完整产品名作为主锚点，并叠加品类、核心用户、首要抓手、机会点和补充关键词生成查询。</p>
+      <p>本次${escapeHtml(label)}以完整产品名和真实品牌实体为主锚点，再叠加官网、官方、价格、评测、用户讨论等产品意图词，避免按字面含义发散。</p>
       ${terms.length ? `<div class="signal-query-chips">${terms.map((term) => `<span>${escapeHtml(term)}</span>`).join("")}</div>` : ""}
       <div class="signal-query-list">
         ${queries.map((query) => `<code>${escapeHtml(query)}</code>`).join("")}
