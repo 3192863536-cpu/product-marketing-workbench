@@ -509,6 +509,13 @@
                   </svg>
                   <span>复制提示词</span>
                 </button>
+                <button id="imageApplyStyleBtn" type="button">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3l2.2 4.8L19 10l-4.8 2.2L12 17l-2.2-4.8L5 10l4.8-2.2L12 3Z" />
+                    <path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z" />
+                  </svg>
+                  <span>套用风格</span>
+                </button>
               </div>
 
               <div class="image-config-grid" aria-label="图片生成配置">
@@ -520,6 +527,17 @@
                     placeholder="例如：产品营销工作台、PMW、你的品牌名"
                     autocomplete="off"
                   />
+                </label>
+                <label class="field compact-field">
+                  <span>视觉风格</span>
+                  <select id="imageStyleInput">
+                    <option value="swiss-minimal" selected>瑞士极简</option>
+                    <option value="luxury-editorial">奢华杂志</option>
+                    <option value="premium-product">高级产品摄影</option>
+                    <option value="lifestyle-scene">生活方式场景</option>
+                    <option value="social-commerce">社媒种草海报</option>
+                    <option value="cinematic-dark">电影感暗调</option>
+                  </select>
                 </label>
                 <label class="field compact-field">
                   <span>画面比例</span>

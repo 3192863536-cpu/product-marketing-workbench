@@ -19,6 +19,32 @@ const imageConfigStorageKey = "marketingWorkbenchImageConfig";
 const defaultImageApiUrl = "https://image-api.kaopuapi.xyz/v1/images/generations";
 const maxHistoryItems = 12;
 const searchResultLimit = 8;
+const imageStylePresets = {
+  "swiss-minimal": {
+    label: "瑞士极简",
+    prompt: "视觉风格：瑞士式极简、高级咨询公司提案质感、纯净浅色背景、精密排版、柔和自然光、低饱和红色作为唯一强调色；画面克制、留白充足、材质干净。"
+  },
+  "luxury-editorial": {
+    label: "奢华杂志",
+    prompt: "视觉风格：欧美高端时尚杂志大片，精致 editorial lighting，丝绸、石材、玻璃或金属等高级材质，低饱和玫红与冷灰绿点缀，构图优雅、画面有奢侈品广告质感。"
+  },
+  "premium-product": {
+    label: "高级产品摄影",
+    prompt: "视觉风格：高端商业产品摄影，真实产品为绝对主体，微距质感、柔和棚拍灯、清晰边缘、高级反光控制、浅景深、干净台面，强调包装材质和可验证产品细节。"
+  },
+  "lifestyle-scene": {
+    label: "生活方式场景",
+    prompt: "视觉风格：高净值生活方式场景，真实产品置于优雅居家、浴室、梳妆台或专业使用环境中，自然晨光、真实人物手部或局部使用动作，温和克制、可信而不摆拍。"
+  },
+  "social-commerce": {
+    label: "社媒种草海报",
+    prompt: "视觉风格：高级社媒种草视觉，适合小红书/Instagram 封面，真实产品主体清晰、构图更抓眼但不花哨，少量可编辑留白用于后期文案，色彩干净、对比明确、避免廉价促销感。"
+  },
+  "cinematic-dark": {
+    label: "电影感暗调",
+    prompt: "视觉风格：欧美电影感暗调商业视觉，深色背景、轮廓光、柔和高光、低饱和色彩、精致阴影层次，真实产品从暗部浮现，氛围高级、神秘但不赛博。"
+  }
+};
 
 const sampleContext =
   "海蓝之谜是高端护肤品牌，核心产品包括精华面霜、修护精萃水、浓缩修护精华等，主打奢华修护、敏感肌屏障护理和高端礼赠场景。目标客户包括高净值女性、熟龄抗老用户、医美后修护人群和高端美妆消费者。当前希望强化品牌价值感、提升复购和内容种草转化。";
@@ -2072,10 +2098,16 @@ function getImageConfig() {
     token: state.serverConfig.tokenConfigured ? "server-managed" : apiConfig.token,
     model: clean($("#imageModelInput").value) || "gpt-image-2",
     logo: clean($("#imageLogoInput").value),
+    style: $("#imageStyleInput")?.value || "swiss-minimal",
     size: $("#imageSizeInput").value,
     quality: $("#imageQualityInput").value,
     count: Number($("#imageCountInput").value || 1)
   };
+}
+
+function selectedImageStyle() {
+  const key = getImageConfig().style || "swiss-minimal";
+  return imageStylePresets[key] || imageStylePresets["swiss-minimal"];
 }
 
 function saveImageConfig(options = {}) {
@@ -2086,6 +2118,7 @@ function saveImageConfig(options = {}) {
       url: config.url,
       model: config.model,
       logo: config.logo,
+      style: config.style,
       size: config.size,
       quality: config.quality,
       count: config.count
@@ -2102,6 +2135,7 @@ function loadImageConfig() {
     const saved = JSON.parse(localStorage.getItem(imageConfigStorageKey) || "null");
     if (saved) {
       $("#imageLogoInput").value = saved.logo || "";
+      $("#imageStyleInput").value = imageStylePresets[saved.style] ? saved.style : "swiss-minimal";
       $("#imageSizeInput").value = saved.size || "16:9";
       $("#imageQualityInput").value = saved.quality || "medium";
       $("#imageCountInput").value = String(saved.count || 1);
@@ -2111,6 +2145,7 @@ function loadImageConfig() {
     localStorage.removeItem(imageConfigStorageKey);
   }
   $("#imageLogoInput").value = "";
+  $("#imageStyleInput").value = "swiss-minimal";
 }
 
 function syncImageConfigFromApi() {
@@ -2133,6 +2168,7 @@ function buildFallbackImagePrompt() {
   const context = report.input.context.replace(/[。.!！?？\s]+$/, "");
   const contextLine = context ? `产品补充信息：${context}。` : "";
   const logoText = clean($("#imageLogoInput")?.value || "") || report.input.product;
+  const style = selectedImageStyle();
   return [
     `为产品“${report.input.product}”生成一张高端、克制、专业的真实产品商业视觉主图。`,
     contextLine,
@@ -2143,7 +2179,7 @@ function buildFallbackImagePrompt() {
     `画面主题：真实呈现“${report.input.product}”的官方真实产品或真实使用场景，让用户一眼理解它对${corePersona.name}的价值。`,
     `品牌标识：仅允许出现真实存在且与该产品一致的品牌 Logo/字标“${logoText}”；不得伪造官方包装文案。`,
     `构图：16:9 横版，中心必须出现真实存在的产品主体、官方包装外观或真实可验证的使用场景；不要只画抽象背景，不要添加收益看板、策略报告、营销术语或虚构说明板。`,
-    `视觉风格：瑞士式极简、高级咨询公司提案质感、纯净浅色背景、精密排版、柔和自然光、低饱和红色作为唯一强调色。`,
+    style.prompt,
     `商业用途：官网主视觉、客户提案封面、产品发布页配图。`,
     `信息边界：外部信号模式为${signalModes}，允许出现上述真实品牌标识；不要冒用无关第三方真实公司 logo，不要出现虚假背书、夸张收益数字或密集文字。`
   ].filter(Boolean).join("\n");
@@ -2152,6 +2188,7 @@ function buildFallbackImagePrompt() {
 function buildImagePromptRequest() {
   const report = buildReport(getFormData());
   const logoText = clean($("#imageLogoInput")?.value || "") || report.input.product;
+  const style = selectedImageStyle();
   return [
     "你是资深创意总监和商业视觉设计师。",
     `请严格根据当前产品“${report.input.product}”生成一段可直接用于 GPT Image 2 / DALL-E / 其他生图模型的中文提示词。`,
@@ -2169,6 +2206,8 @@ function buildImagePromptRequest() {
     `核心卖点/首要抓手：${report.actionSignal}`,
     `产品机会：${report.opportunities.slice(0, 4).map((item) => item.name).join("、")}`,
     `需要出现在画面中的自有品牌 Logo/字标：${logoText}`,
+    `用户选择的视觉风格：${style.label}`,
+    style.prompt,
     "",
     "提示词要求：",
     "1. 只输出最终提示词，不要解释。",
@@ -2176,7 +2215,7 @@ function buildImagePromptRequest() {
     "3. 画面里任何实体商品、包装、瓶身、罐身、标签、SKU、产品名称，都必须来自联网证据或用户明确输入；不得捏造不存在的产品名、包装名、功效名、标签文字或官方卖点。",
     "4. 如果联网证据只证明了品牌而没有证明具体 SKU，提示词只能要求“真实官方产品包装/真实官方 SKU”，不能创造新的产品名称。",
     `5. 必须包含真实产品主体或真实使用场景、目标用户、核心卖点、构图、材质、光线、色彩、品牌气质、用途，并明确要求画面里出现真实且匹配的品牌 Logo/字标“${logoText}”。`,
-    "6. 风格要克制、高端、清洁，像专业咨询公司或瑞士高端服务品牌，不要廉价赛博风、不要 emoji、不要密集文字。",
+    `6. 必须使用用户选择的“${style.label}”视觉风格，同时保持克制、高端、清洁；不要廉价赛博风、不要 emoji、不要密集文字。`,
     "7. 允许且必须出现上面指定的真实品牌标识；禁止冒用无关第三方真实品牌 logo、真实人物肖像、虚假数据、虚假引用。",
     "8. 提示词控制在 260-460 个中文字符，可以包含少量英文摄影/设计术语。",
     "",
@@ -2192,6 +2231,23 @@ function parseImagePromptResponse(value) {
     .replace(/```$/i, "")
     .replace(/^["“]|["”]$/g, "")
     .trim();
+}
+
+function applyImageStyleToPrompt() {
+  const style = selectedImageStyle();
+  const promptInput = $("#imagePromptInput");
+  const current = clean(promptInput.value);
+  const styleBlock = style.prompt;
+  const nextPrompt = current
+    ? current.replace(/视觉风格[:：][\s\S]*?(?=\n(?:商业用途|信息边界|产品阶段|画面主题|品牌标识|构图)[:：]|$)/, styleBlock)
+    : buildFallbackImagePrompt();
+
+  promptInput.value = nextPrompt.includes(styleBlock)
+    ? nextPrompt
+    : `${nextPrompt}\n${styleBlock}`;
+  saveImageConfig({ silent: true });
+  setImageStatus(`已套用“${style.label}”风格，可继续手动修改提示词或直接生成图片。`, "success");
+  showToast(`已套用${style.label}风格`);
 }
 
 function setImagePromptLoading(isLoading) {
@@ -3221,7 +3277,7 @@ async function init() {
   ["#webSearchInput", "#communityInput"].forEach((selector) => {
     $(selector).addEventListener("change", updateExternalSignalPanels);
   });
-  ["#imageLogoInput", "#imageSizeInput", "#imageQualityInput", "#imageCountInput"].forEach((selector) => {
+  ["#imageLogoInput", "#imageStyleInput", "#imageSizeInput", "#imageQualityInput", "#imageCountInput"].forEach((selector) => {
     $(selector).addEventListener("change", saveImageConfig);
   });
   ["#webSearchPageInput", "#communityPageInput"].forEach((selector) => {
@@ -3292,6 +3348,7 @@ async function init() {
   $("#imageToolBtn").addEventListener("click", () => toggleImageStudio());
   $("#closeImageStudioBtn").addEventListener("click", () => toggleImageStudio(false));
   $("#imagePromptBtn").addEventListener("click", generateImagePrompt);
+  $("#imageApplyStyleBtn").addEventListener("click", applyImageStyleToPrompt);
   $("#copyImagePromptBtn").addEventListener("click", async () => {
     const prompt = $("#imagePromptInput").value.trim();
     if (!prompt) {
