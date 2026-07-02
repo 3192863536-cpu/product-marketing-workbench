@@ -2182,7 +2182,7 @@ function setImageBatchGenerating(isGenerating) {
   if (!batchButton) return;
   batchButton.disabled = isGenerating;
   batchButton.classList.toggle("loading", isGenerating);
-  batchButton.querySelector("span").textContent = isGenerating ? "多图生成中" : "一键生成多图";
+  batchButton.querySelector("span").textContent = isGenerating ? "生成中" : "生成产品图";
   $("#imageGenerateBtn").disabled = isGenerating || state.imageGenerating;
   $("#imagePromptBtn").disabled = isGenerating || state.imagePromptLoading;
 }
@@ -2632,7 +2632,7 @@ async function generateImageFromPrompt(options = {}) {
       const variationPrompt = [
         finalPrompt,
         "",
-        `补充生成第 ${images.length + 1} 张候选图：保持同一产品、品牌色和商业用途，但改变构图、镜头距离、道具层次或版式节奏，避免与前一张完全重复。`
+        `补充生成第 ${images.length + 1} 张图片：保持同一产品、品牌色和商业用途，但改变构图、镜头距离、道具层次或版式节奏，避免与前一张完全重复。`
       ].join("\n");
       addImages(await requestImageGeneration(variationPrompt, { ...config, count: Math.min(remaining, 1) }, controller.signal));
     }
@@ -2640,7 +2640,7 @@ async function generateImageFromPrompt(options = {}) {
     if (!images.length) throw new Error("图片接口没有返回图片");
     renderImageGallery(images, 0);
     $("#imageMeta").textContent = `${config.model} / ${config.size} / ${config.quality} / ${images.length} 张`;
-    setImageStatus(images.length < count ? `图片已生成 ${images.length} 张；接口没有继续返回更多候选图。` : "图片已生成，可直接查看多张候选图。", "success");
+    setImageStatus(images.length < count ? `图片已生成 ${images.length} 张；接口没有继续返回更多图片。` : `图片已生成，共 ${images.length} 张。`, "success");
     if (!silent) showToast(images.length > 1 ? `已生成 ${images.length} 张图片` : "图片已生成");
     return images;
   } catch (error) {
@@ -2661,7 +2661,7 @@ async function generateMultiImagesOneClick() {
   saveImageConfig();
 
   setImageBatchGenerating(true);
-  setImageStatus("正在先进行全网联索，确认当前产品信息后再生成多图", "loading");
+  setImageStatus("正在先进行全网联索，确认当前产品信息后再生成图片", "loading");
   try {
     const evidence = await ensureWebEvidenceForImage({ force: true });
     if (!evidence.length) {
@@ -2669,7 +2669,7 @@ async function generateMultiImagesOneClick() {
     }
     const prompt = await generateImagePrompt({ silent: true, skipSearch: true });
     if (!prompt) throw new Error("没有生成可用提示词");
-    setImageStatus(`提示词已就绪，正在生成 ${targetCount} 张候选图`, "loading");
+    setImageStatus(`提示词已就绪，正在生成 ${targetCount} 张图片`, "loading");
     const images = await generateImageFromPrompt({
       prompt,
       config: { ...getImageConfig(), count: targetCount },
@@ -2678,8 +2678,8 @@ async function generateMultiImagesOneClick() {
       skipSearch: true
     });
     if (images.length) {
-      setImageStatus(`已完成 ${images.length} 张候选图，可点击缩略图切换预览。`, "success");
-      showToast(`已生成 ${images.length} 张候选图`);
+      setImageStatus(`已完成 ${images.length} 张图片，可点击缩略图切换预览。`, "success");
+      showToast(`已生成 ${images.length} 张图片`);
     }
   } catch (error) {
     setImageStatus(`一键多图失败：${error.message.slice(0, 120)}`, "error");
